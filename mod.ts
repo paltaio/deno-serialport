@@ -44,6 +44,6 @@ export {
 export { listPorts, portExists } from './src/utils/list.ts'
 
 // Constants for advanced usage
-export { BAUD_RATE_MAP, CC, CFLAG, IFLAG, LFLAG, OFLAG, TCSA } from './src/ffi/termios.ts'
+export { CC, CFLAG, getBaudRateValue, IFLAG, LFLAG, OFLAG, TCSA } from './src/ffi/termios.ts'
 
 export { ERRNO, FLUSH, IOCTL, O_FLAGS, TIOCM } from './src/ffi/types.ts'

@@ -1,7 +1,10 @@
 /**
  * FFI Type Definitions for Deno SerialPort
  * Provides type mappings between Deno FFI and native types
+ * Supports both Linux and macOS/Darwin
  */
+
+import { getPlatformConfig, type PlatformConfig } from '../utils/platform.ts'
 
 // Native type aliases for clarity
 export type NativeFileDescriptor = number
@@ -11,8 +14,11 @@ export type NativeSpeed = number
 // Buffer type for FFI calls
 export type NativeBuffer = Uint8Array
 
-// Termios structure size (usually 60 bytes on Linux x86_64)
-export const TERMIOS_SIZE = 60
+// Get platform configuration
+const platformConfig: PlatformConfig = getPlatformConfig()
+
+// Termios structure size (platform-specific)
+export const TERMIOS_SIZE = platformConfig.termiosSize
 
 // Common errno values
 export const ERRNO = {
@@ -45,18 +51,8 @@ export const O_FLAGS = {
   O_SYNC: 0x101000,
 } as const
 
-// IOCTL commands for serial ports
-export const IOCTL = {
-  TIOCGSERIAL: 0x541E,
-  TIOCSSERIAL: 0x541F,
-  TIOCMGET: 0x5415,
-  TIOCMSET: 0x5418,
-  TIOCMBIS: 0x5416,
-  TIOCMBIC: 0x5417,
-  FIONREAD: 0x541B,
-  TIOCOUTQ: 0x5411,
-  TCFLSH: 0x540B,
-} as const
+// IOCTL commands for serial ports (platform-specific)
+export const IOCTL = platformConfig.ioctlConstants
 
 // Modem control lines
 export const TIOCM = {

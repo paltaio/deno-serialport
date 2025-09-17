@@ -3,6 +3,8 @@
  */
 
 import {
+  cfsetispeed,
+  cfsetospeed,
   close,
   closeLibc,
   ioctl,
@@ -14,9 +16,9 @@ import {
   write,
 } from '../ffi/libc.ts'
 import {
-  BAUD_RATE_MAP,
   CFLAG,
   createTermiosBuffer,
+  getBaudRateValue,
   IFLAG,
   makeRaw,
   parseTermios,
@@ -24,6 +26,7 @@ import {
   writeTermios,
 } from '../ffi/termios.ts'
 import { FLUSH, IOCTL, O_FLAGS, TIOCM } from '../ffi/types.ts'
+import { isDarwin, isLinux } from '../utils/platform.ts'
 import {
   SerialPortError,
   SerialPortErrorCode,
@@ -74,7 +77,9 @@ export class SerialPort {
 
   private validateOptions(): void {
     // Validate baud rate
-    if (!BAUD_RATE_MAP.has(this.options.baudRate)) {
+    try {
+      getBaudRateValue(this.options.baudRate)
+    } catch {
       throw new SerialPortError(
         `Invalid baud rate: ${this.options.baudRate}`,
         SerialPortErrorCode.INVALID_BAUD_RATE,
@@ -167,12 +172,23 @@ export class SerialPort {
     // Configure for raw mode
     makeRaw(termios)
 
-    // Set baud rate
-    const baudFlag = BAUD_RATE_MAP.get(this.options.baudRate)!
-    termios.c_cflag &= ~CFLAG.CBAUD
-    termios.c_cflag |= baudFlag
-    termios.c_ispeed = baudFlag
-    termios.c_ospeed = baudFlag
+    // Set baud rate - platform specific
+    const baudValue = getBaudRateValue(this.options.baudRate)
+
+    if (isDarwin()) {
+      // On macOS, baud rates are set via cfsetispeed/cfsetospeed
+      // and use actual values, not bit flags
+      termios.c_ispeed = baudValue
+      termios.c_ospeed = baudValue
+      // We'll set these after writing the termios structure back
+    } else {
+      // On Linux, baud rates are bit flags in c_cflag
+      // @ts-expect-error - CBAUD only exists on Linux
+      termios.c_cflag &= ~CFLAG.CBAUD
+      termios.c_cflag |= baudValue
+      termios.c_ispeed = baudValue
+      termios.c_ospeed = baudValue
+    }
 
     // Set data bits
     termios.c_cflag &= ~CFLAG.CSIZE
@@ -212,14 +228,32 @@ export class SerialPort {
         termios.c_cflag |= CFLAG.PARODD
         break
       case 'mark':
-        termios.c_cflag |= CFLAG.PARENB
-        termios.c_cflag |= CFLAG.PARODD
-        termios.c_cflag |= CFLAG.CMSPAR
+        if (isLinux()) {
+          termios.c_cflag |= CFLAG.PARENB
+          termios.c_cflag |= CFLAG.PARODD
+          // @ts-expect-error - CMSPAR only exists on Linux
+          termios.c_cflag |= CFLAG.CMSPAR
+        } else {
+          // macOS doesn't support mark/space parity
+          throw new SerialPortError(
+            'Mark parity is not supported on macOS',
+            SerialPortErrorCode.INVALID_CONFIGURATION,
+          )
+        }
         break
       case 'space':
-        termios.c_cflag |= CFLAG.PARENB
-        termios.c_cflag &= ~CFLAG.PARODD
-        termios.c_cflag |= CFLAG.CMSPAR
+        if (isLinux()) {
+          termios.c_cflag |= CFLAG.PARENB
+          termios.c_cflag &= ~CFLAG.PARODD
+          // @ts-expect-error - CMSPAR only exists on Linux
+          termios.c_cflag |= CFLAG.CMSPAR
+        } else {
+          // macOS doesn't support mark/space parity
+          throw new SerialPortError(
+            'Space parity is not supported on macOS',
+            SerialPortErrorCode.INVALID_CONFIGURATION,
+          )
+        }
         break
     }
 
@@ -256,6 +290,13 @@ export class SerialPort {
     // Apply settings
     writeTermios(termios, termiosBuffer)
     tcsetattr(this.fd, TCSA.TCSANOW, termiosBuffer)
+
+    // On macOS, also set baud rate using cfsetispeed/cfsetospeed
+    if (isDarwin()) {
+      cfsetispeed(termiosBuffer, baudValue)
+      cfsetospeed(termiosBuffer, baudValue)
+      tcsetattr(this.fd, TCSA.TCSANOW, termiosBuffer)
+    }
 
     // Flush any pending I/O
     tcflush(this.fd, FLUSH.TCIOFLUSH)

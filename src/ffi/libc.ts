@@ -1,115 +1,152 @@
 /**
- * FFI bindings for libc functions used for serial port operations
+ * FFI bindings for system library functions used for serial port operations
+ * Supports both Linux (libc) and macOS (libSystem.dylib)
  */
 
 import { ERRNO } from './types.ts'
+import { getPlatformConfig, isDarwin, isLinux } from '../utils/platform.ts'
 
-// Define the libc library interface
-const libcSymbols = {
-  // File operations
-  open: {
-    parameters: ['buffer', 'i32'] as const,
-    result: 'i32' as const,
-  },
-  close: {
-    parameters: ['i32'] as const,
-    result: 'i32' as const,
-  },
-  read: {
-    parameters: ['i32', 'buffer', 'usize'] as const,
-    result: 'isize' as const,
-    nonblocking: true,
-  },
-  write: {
-    parameters: ['i32', 'buffer', 'usize'] as const,
-    result: 'isize' as const,
-    nonblocking: true,
-  },
+// Get platform-specific configuration
+const platformConfig = getPlatformConfig()
 
-  // Terminal control
-  tcgetattr: {
-    parameters: ['i32', 'buffer'] as const,
-    result: 'i32' as const,
-  },
-  tcsetattr: {
-    parameters: ['i32', 'i32', 'buffer'] as const,
-    result: 'i32' as const,
-  },
-  tcflush: {
-    parameters: ['i32', 'i32'] as const,
-    result: 'i32' as const,
-  },
-  tcdrain: {
-    parameters: ['i32'] as const,
-    result: 'i32' as const,
-  },
-  tcflow: {
-    parameters: ['i32', 'i32'] as const,
-    result: 'i32' as const,
-  },
-  tcsendbreak: {
-    parameters: ['i32', 'i32'] as const,
-    result: 'i32' as const,
-  },
+// Build the dynamic symbols object based on platform
+function buildSymbols() {
+  const baseSymbols = {
+    // File operations
+    open: {
+      parameters: ['buffer', 'i32'] as const,
+      result: 'i32' as const,
+    },
+    close: {
+      parameters: ['i32'] as const,
+      result: 'i32' as const,
+    },
+    read: {
+      parameters: ['i32', 'buffer', 'usize'] as const,
+      result: 'isize' as const,
+      nonblocking: true,
+    },
+    write: {
+      parameters: ['i32', 'buffer', 'usize'] as const,
+      result: 'isize' as const,
+      nonblocking: true,
+    },
 
-  // Baud rate functions
-  cfsetispeed: {
-    parameters: ['buffer', 'u32'] as const,
-    result: 'i32' as const,
-  },
-  cfsetospeed: {
-    parameters: ['buffer', 'u32'] as const,
-    result: 'i32' as const,
-  },
-  cfgetispeed: {
-    parameters: ['buffer'] as const,
-    result: 'u32' as const,
-  },
-  cfgetospeed: {
-    parameters: ['buffer'] as const,
-    result: 'u32' as const,
-  },
+    // Terminal control
+    tcgetattr: {
+      parameters: ['i32', 'buffer'] as const,
+      result: 'i32' as const,
+    },
+    tcsetattr: {
+      parameters: ['i32', 'i32', 'buffer'] as const,
+      result: 'i32' as const,
+    },
+    tcflush: {
+      parameters: ['i32', 'i32'] as const,
+      result: 'i32' as const,
+    },
+    tcdrain: {
+      parameters: ['i32'] as const,
+      result: 'i32' as const,
+    },
+    tcflow: {
+      parameters: ['i32', 'i32'] as const,
+      result: 'i32' as const,
+    },
+    tcsendbreak: {
+      parameters: ['i32', 'i32'] as const,
+      result: 'i32' as const,
+    },
 
-  // IOCTL for advanced control
-  ioctl: {
-    parameters: ['i32', 'usize', 'buffer'] as const,
-    result: 'i32' as const,
-  },
+    // Baud rate functions
+    cfsetispeed: {
+      parameters: ['buffer', 'u32'] as const,
+      result: 'i32' as const,
+    },
+    cfsetospeed: {
+      parameters: ['buffer', 'u32'] as const,
+      result: 'i32' as const,
+    },
+    cfgetispeed: {
+      parameters: ['buffer'] as const,
+      result: 'u32' as const,
+    },
+    cfgetospeed: {
+      parameters: ['buffer'] as const,
+      result: 'u32' as const,
+    },
 
-  // Error handling
-  __errno_location: {
-    parameters: [] as const,
-    result: 'pointer' as const,
-  },
+    // IOCTL for advanced control
+    ioctl: {
+      parameters: ['i32', 'usize', 'pointer'] as const,
+      result: 'i32' as const,
+    },
 
-  // File status
-  fcntl: {
-    parameters: ['i32', 'i32', 'i32'] as const,
-    result: 'i32' as const,
-  },
-} as const
+    // File status
+    fcntl: {
+      parameters: ['i32', 'i32', 'i32'] as const,
+      result: 'i32' as const,
+    },
+  }
 
-// Load the libc library
+  // Add platform-specific errno function
+  if (isDarwin()) {
+    return {
+      ...baseSymbols,
+      __error: {
+        parameters: [] as const,
+        result: 'pointer' as const,
+      },
+    }
+  } else {
+    return {
+      ...baseSymbols,
+      __errno_location: {
+        parameters: [] as const,
+        result: 'pointer' as const,
+      },
+    }
+  }
+}
+
+// Define the library interface based on platform
+const libcSymbols = buildSymbols()
+
+// Load the system library
 let libc: Deno.DynamicLibrary<typeof libcSymbols> | null = null
 
 /**
- * Get the libc library instance
+ * Get the system library instance
  */
 export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
   if (!libc) {
     try {
-      // Try common libc locations
-      const libcPaths = [
-        'libc.so.6',
-        '/lib/x86_64-linux-gnu/libc.so.6',
-        '/lib64/libc.so.6',
-        '/usr/lib/libc.so.6',
-        '/lib/libc.so.6',
-      ]
+      // Determine library paths based on platform
+      let libPaths: string[]
+
+      if (isDarwin()) {
+        // macOS system library
+        libPaths = [
+          'libSystem.dylib',
+          '/usr/lib/libSystem.dylib',
+          '/System/Library/Frameworks/System.framework/System',
+        ]
+      } else if (isLinux()) {
+        // Linux libc locations
+        libPaths = [
+          'libc.so.6',
+          '/lib/x86_64-linux-gnu/libc.so.6',
+          '/lib64/libc.so.6',
+          '/usr/lib/libc.so.6',
+          '/lib/libc.so.6',
+        ]
+      } else {
+        throw new Error(`Unsupported platform: ${platformConfig.platform}`)
+      }
 
       let lastError: Error | null = null
 
-      for (const path of libcPaths) {
+      for (const path of libPaths) {
         try {
           libc = Deno.dlopen(path, libcSymbols)
           break
@@ -119,10 +156,10 @@ export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
       }
 
       if (!libc) {
-        throw lastError || new Error('Failed to load libc')
+        throw lastError || new Error(`Failed to load system library for ${platformConfig.platform}`)
       }
     } catch (error) {
-      throw new Error(`Failed to load libc: ${error}`)
+      throw new Error(`Failed to load system library: ${error}`)
     }
   }
 
@@ -134,7 +171,17 @@ export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
  */
 export function getErrno(): number {
   const lib = getLibc()
-  const errnoPtr = lib.symbols.__errno_location()
+
+  // Get errno pointer based on platform
+  let errnoPtr: Deno.PointerValue
+
+  if (isDarwin()) {
+    // @ts-expect-error - Platform-specific symbol
+    errnoPtr = lib.symbols.__error()
+  } else {
+    // @ts-expect-error - Platform-specific symbol
+    errnoPtr = lib.symbols.__errno_location()
+  }
 
   if (!errnoPtr) {
     return 0
@@ -323,8 +370,17 @@ export function cfsetospeed(termiosBuffer: ArrayBuffer, speed: number): void {
  */
 export function ioctl(fd: number, request: number, argBuffer?: ArrayBuffer): number {
   const lib = getLibc()
-  const buffer = argBuffer ? new Uint8Array(argBuffer) : new Uint8Array(8)
-  const result = lib.symbols.ioctl(fd, BigInt(request), buffer)
+
+  // Create a pointer to the buffer
+  let ptr: Deno.PointerValue = null
+
+  if (argBuffer) {
+    const buffer = new Uint8Array(argBuffer)
+    // Create an unsafe pointer to the buffer
+    ptr = Deno.UnsafePointer.of(buffer)
+  }
+
+  const result = lib.symbols.ioctl(fd, BigInt(request), ptr)
 
   if (result === -1) {
     const errno = getErrno()

@@ -1,13 +1,86 @@
 /**
  * Serial port enumeration utility
+ * Supports both Linux and macOS/Darwin serial port discovery
  */
 
-import { type PortInfo } from '../core/types.ts'
+import type { PortInfo } from '../core/types.ts'
+import { isDarwin, isLinux } from './platform.ts'
 
 /**
  * List all available serial ports
  */
 export async function listPorts(): Promise<PortInfo[]> {
+  if (isDarwin()) {
+    return await listPortsDarwin()
+  } else if (isLinux()) {
+    return await listPortsLinux()
+  } else {
+    return []
+  }
+}
+
+/**
+ * List serial ports on macOS/Darwin
+ */
+async function listPortsDarwin(): Promise<PortInfo[]> {
+  const ports: PortInfo[] = []
+
+  try {
+    // On macOS, serial ports are under /dev/cu.* and /dev/tty.*
+    // We use /dev/cu.* for call-out devices
+    const devDir = '/dev'
+
+    for await (const entry of Deno.readDir(devDir)) {
+      // Check if it's a device file and starts with 'cu.'
+      if (entry.name.startsWith('cu.')) {
+        // Common patterns: cu.usbmodem*, cu.usbserial*, cu.Bluetooth*
+        if (
+          entry.name.includes('usbmodem') ||
+          entry.name.includes('usbserial') ||
+          entry.name.includes('SLAB_USBtoUART') ||
+          entry.name.includes('wchusbserial') ||
+          entry.name.includes('PL2303') ||
+          entry.name.includes('FTDISerial')
+        ) {
+          const path = `/dev/${entry.name}`
+          const info: PortInfo = { path }
+
+          // Try to extract some info from the device name
+          if (entry.name.includes('usbmodem')) {
+            info.pnpId = 'USB Modem'
+          } else if (entry.name.includes('usbserial')) {
+            info.pnpId = 'USB Serial'
+          } else if (entry.name.includes('SLAB')) {
+            info.manufacturer = 'Silicon Labs'
+          } else if (entry.name.includes('FTDISerial')) {
+            info.manufacturer = 'FTDI'
+          } else if (entry.name.includes('PL2303')) {
+            info.manufacturer = 'Prolific'
+          }
+
+          // Extract location from device name (e.g., cu.usbmodem101 -> 101)
+          const match = entry.name.match(/(\d+)$/)
+          if (match && match[1]) {
+            info.locationId = match[1]
+          }
+
+          ports.push(info)
+        }
+      }
+    }
+  } catch (error) {
+    if (error instanceof Deno.errors.PermissionDenied) {
+      console.warn('Permission denied reading /dev. Try running with --allow-read')
+    }
+  }
+
+  return ports
+}
+
+/**
+ * List serial ports on Linux
+ */
+async function listPortsLinux(): Promise<PortInfo[]> {
   const ports: PortInfo[] = []
 
   try {
@@ -30,7 +103,7 @@ export async function listPorts(): Promise<PortInfo[]> {
         const stat = await Deno.lstat(driverPath)
         if (stat.isSymlink) {
           // This is likely a real serial port
-          const portInfo = await getPortInfo(name)
+          const portInfo = await getPortInfoLinux(name)
           if (portInfo) {
             ports.push(portInfo)
           }
@@ -54,9 +127,9 @@ export async function listPorts(): Promise<PortInfo[]> {
 }
 
 /**
- * Get detailed information about a specific port
+ * Get detailed information about a specific port on Linux
  */
-async function getPortInfo(name: string): Promise<PortInfo | null> {
+async function getPortInfoLinux(name: string): Promise<PortInfo | null> {
   const path = `/dev/${name}`
 
   // Skip pseudo terminals and other non-serial devices
@@ -151,7 +224,7 @@ async function addUsbSerialPorts(ports: PortInfo[]): Promise<void> {
             // Extract the tty name from the real path
             const match = realPath.match(/\/dev\/(tty\w+)/)
             if (match && match[1]) {
-              const portInfo = await getPortInfo(match[1])
+              const portInfo = await getPortInfoLinux(match[1])
               if (portInfo) {
                 // Add location ID from the symlink name
                 if (dir.includes('by-id')) {
