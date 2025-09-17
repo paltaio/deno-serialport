@@ -2,7 +2,7 @@
  * Basic functionality test
  */
 
-import { SerialPort, listPorts, SerialPortError } from '../mod.ts'
+import { listPorts, SerialPort, SerialPortError } from '../mod.ts'
 
 console.log('🧪 Testing Deno SerialPort Library\n')
 
@@ -25,10 +25,10 @@ try {
     autoOpen: false, // Don't auto-open
   })
   console.log('✅ SerialPort instance created (not opened)')
-  
+
   // Test parameter validation
   try {
-    const badPort = new SerialPort({
+    const _badPort = new SerialPort({
       path: '/dev/test',
       baudRate: 123456789, // Invalid baud rate
       autoOpen: false,
@@ -38,13 +38,13 @@ try {
       console.log('✅ Invalid baud rate correctly rejected')
     }
   }
-  
+
   // Test data validation
   try {
-    const badPort2 = new SerialPort({
+    const _badPort2 = new SerialPort({
       path: '/dev/test',
       baudRate: 9600,
-      dataBits: 9 as any, // Invalid data bits
+      dataBits: 9 as unknown as 5 | 6 | 7 | 8, // Invalid data bits
       autoOpen: false,
     })
   } catch (error) {
@@ -52,7 +52,7 @@ try {
       console.log('✅ Invalid data bits correctly rejected')
     }
   }
-  
+
   // Test opening a non-existent port
   try {
     testPort.open()
@@ -61,7 +61,6 @@ try {
       console.log('✅ Non-existent port correctly reported as not found')
     }
   }
-  
 } catch (error) {
   console.error('❌ Error:', error)
 }

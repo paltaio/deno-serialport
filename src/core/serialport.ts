@@ -15,24 +15,21 @@ import {
 } from '../ffi/libc.ts'
 import {
   BAUD_RATE_MAP,
-  CC,
   CFLAG,
   createTermiosBuffer,
   IFLAG,
-  LFLAG,
   makeRaw,
-  OFLAG,
   parseTermios,
   TCSA,
   writeTermios,
 } from '../ffi/termios.ts'
 import { FLUSH, IOCTL, O_FLAGS, TIOCM } from '../ffi/types.ts'
 import {
-  type SerialPortOptions,
-  type SetSignals,
-  type SerialPortSignals,
   SerialPortError,
   SerialPortErrorCode,
+  type SerialPortOptions,
+  type SerialPortSignals,
+  type SetSignals,
 } from './types.ts'
 
 /**
@@ -44,7 +41,7 @@ export class SerialPort {
   private readBuffer: Uint8Array
   private isOpen = false
   private originalTermios: ArrayBuffer | null = null
-  
+
   constructor(options: SerialPortOptions) {
     // Set defaults
     this.options = {
@@ -62,19 +59,19 @@ export class SerialPort {
       highWaterMark: options.highWaterMark ?? 65536,
       lock: options.lock ?? true,
     }
-    
+
     // Validate options
     this.validateOptions()
-    
+
     // Initialize read buffer
     this.readBuffer = new Uint8Array(this.options.highWaterMark)
-    
+
     // Auto-open if requested
     if (this.options.autoOpen) {
       this.open()
     }
   }
-  
+
   private validateOptions(): void {
     // Validate baud rate
     if (!BAUD_RATE_MAP.has(this.options.baudRate)) {
@@ -83,7 +80,7 @@ export class SerialPort {
         SerialPortErrorCode.INVALID_BAUD_RATE,
       )
     }
-    
+
     // Validate data bits
     if (![5, 6, 7, 8].includes(this.options.dataBits)) {
       throw new SerialPortError(
@@ -91,7 +88,7 @@ export class SerialPort {
         SerialPortErrorCode.INVALID_CONFIGURATION,
       )
     }
-    
+
     // Validate stop bits
     if (![1, 2].includes(this.options.stopBits)) {
       throw new SerialPortError(
@@ -99,7 +96,7 @@ export class SerialPort {
         SerialPortErrorCode.INVALID_CONFIGURATION,
       )
     }
-    
+
     // Validate parity
     if (!['none', 'even', 'odd', 'mark', 'space'].includes(this.options.parity)) {
       throw new SerialPortError(
@@ -108,7 +105,7 @@ export class SerialPort {
       )
     }
   }
-  
+
   /**
    * Open the serial port
    */
@@ -116,28 +113,30 @@ export class SerialPort {
     if (this.isOpen) {
       return
     }
-    
+
     try {
       // Open the device
       const flags = O_FLAGS.O_RDWR | O_FLAGS.O_NOCTTY | O_FLAGS.O_NONBLOCK
       this.fd = open(this.options.path, flags)
-      
+
       // Save original termios settings
       this.originalTermios = createTermiosBuffer()
       tcgetattr(this.fd, this.originalTermios)
-      
+
       // Configure the port
       this.configurePort()
-      
+
       this.isOpen = true
     } catch (error) {
       if (this.fd !== null) {
         try {
           close(this.fd)
-        } catch {}
+        } catch {
+          // Ignore close error during cleanup
+        }
         this.fd = null
       }
-      
+
       if (error instanceof Error) {
         if (error.message.includes('errno 2')) {
           throw new SerialPortError(
@@ -154,27 +153,27 @@ export class SerialPort {
       throw error
     }
   }
-  
+
   private configurePort(): void {
     if (this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
+
     // Create and configure termios structure
     const termiosBuffer = createTermiosBuffer()
     tcgetattr(this.fd, termiosBuffer)
     const termios = parseTermios(termiosBuffer)
-    
+
     // Configure for raw mode
     makeRaw(termios)
-    
+
     // Set baud rate
     const baudFlag = BAUD_RATE_MAP.get(this.options.baudRate)!
     termios.c_cflag &= ~CFLAG.CBAUD
     termios.c_cflag |= baudFlag
     termios.c_ispeed = baudFlag
     termios.c_ospeed = baudFlag
-    
+
     // Set data bits
     termios.c_cflag &= ~CFLAG.CSIZE
     switch (this.options.dataBits) {
@@ -191,14 +190,14 @@ export class SerialPort {
         termios.c_cflag |= CFLAG.CS8
         break
     }
-    
+
     // Set stop bits
     if (this.options.stopBits === 2) {
       termios.c_cflag |= CFLAG.CSTOPB
     } else {
       termios.c_cflag &= ~CFLAG.CSTOPB
     }
-    
+
     // Set parity
     switch (this.options.parity) {
       case 'none':
@@ -223,14 +222,14 @@ export class SerialPort {
         termios.c_cflag |= CFLAG.CMSPAR
         break
     }
-    
+
     // Hardware flow control
     if (this.options.rtscts) {
       termios.c_cflag |= CFLAG.CRTSCTS
     } else {
       termios.c_cflag &= ~CFLAG.CRTSCTS
     }
-    
+
     // Software flow control
     if (this.options.xon || this.options.xoff) {
       termios.c_iflag |= IFLAG.IXON | IFLAG.IXOFF
@@ -240,28 +239,28 @@ export class SerialPort {
     } else {
       termios.c_iflag &= ~(IFLAG.IXON | IFLAG.IXOFF | IFLAG.IXANY)
     }
-    
+
     // Enable receiver
     termios.c_cflag |= CFLAG.CREAD
-    
+
     // Local connection (ignore modem control)
     termios.c_cflag |= CFLAG.CLOCAL
-    
+
     // Hang up on close
     if (this.options.hupcl) {
       termios.c_cflag |= CFLAG.HUPCL
     } else {
       termios.c_cflag &= ~CFLAG.HUPCL
     }
-    
+
     // Apply settings
     writeTermios(termios, termiosBuffer)
     tcsetattr(this.fd, TCSA.TCSANOW, termiosBuffer)
-    
+
     // Flush any pending I/O
     tcflush(this.fd, FLUSH.TCIOFLUSH)
   }
-  
+
   /**
    * Close the serial port
    */
@@ -269,15 +268,17 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       return
     }
-    
+
     try {
       // Restore original termios if we have it
       if (this.originalTermios) {
         try {
           tcsetattr(this.fd, TCSA.TCSANOW, this.originalTermios)
-        } catch {}
+        } catch {
+          // Ignore error restoring termios
+        }
       }
-      
+
       close(this.fd)
     } finally {
       this.fd = null
@@ -285,7 +286,7 @@ export class SerialPort {
       this.originalTermios = null
     }
   }
-  
+
   /**
    * Write data to the serial port
    */
@@ -293,31 +294,29 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
-    const buffer = typeof data === 'string' 
-      ? new TextEncoder().encode(data)
-      : data
-    
+
+    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data
+
     let totalWritten = 0
     let offset = 0
-    
+
     while (offset < buffer.length) {
       const chunk = buffer.slice(offset, offset + 4096)
       const written = await write(this.fd, chunk)
-      
+
       if (written === 0) {
         // Would block, wait a bit
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 10))
         continue
       }
-      
+
       totalWritten += written
       offset += written
     }
-    
+
     return totalWritten
   }
-  
+
   /**
    * Read data from the serial port
    */
@@ -325,20 +324,20 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
-    const buffer = size 
+
+    const buffer = size
       ? new Uint8Array(Math.min(size, this.options.highWaterMark))
       : this.readBuffer
-    
+
     const bytesRead = await read(this.fd, buffer)
-    
+
     if (bytesRead === 0) {
       return new Uint8Array(0)
     }
-    
+
     return buffer.slice(0, bytesRead)
   }
-  
+
   /**
    * Flush the serial port buffers
    */
@@ -346,7 +345,7 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
+
     let queue: number
     switch (direction) {
       case 'input':
@@ -359,10 +358,10 @@ export class SerialPort {
         queue = FLUSH.TCIOFLUSH
         break
     }
-    
+
     tcflush(this.fd, queue)
   }
-  
+
   /**
    * Send a break signal
    */
@@ -370,22 +369,24 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
+
     // Set break
     const bits = new ArrayBuffer(4)
-    const view = new DataView(bits)
+    const _view = new DataView(bits)
     ioctl(this.fd, IOCTL.TIOCMBIS, bits)
-    
+
     // Wait for duration
     if (duration > 0) {
       const start = Date.now()
-      while (Date.now() - start < duration) {}
+      while (Date.now() - start < duration) {
+        // Busy wait for the specified duration
+      }
     }
-    
+
     // Clear break
     ioctl(this.fd, IOCTL.TIOCMBIC, bits)
   }
-  
+
   /**
    * Get modem control signals
    */
@@ -393,12 +394,12 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
+
     const bits = new ArrayBuffer(4)
     ioctl(this.fd, IOCTL.TIOCMGET, bits)
     const view = new DataView(bits)
     const status = view.getUint32(0, true)
-    
+
     return {
       cts: (status & TIOCM.TIOCM_CTS) !== 0,
       dsr: (status & TIOCM.TIOCM_DSR) !== 0,
@@ -406,7 +407,7 @@ export class SerialPort {
       ring: (status & TIOCM.TIOCM_RI) !== 0,
     }
   }
-  
+
   /**
    * Set modem control signals
    */
@@ -414,41 +415,41 @@ export class SerialPort {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
-    
+
     const bits = new ArrayBuffer(4)
     const view = new DataView(bits)
     let value = 0
-    
+
     if (signals.dtr !== undefined) {
       if (signals.dtr) {
         value |= TIOCM.TIOCM_DTR
       }
     }
-    
+
     if (signals.rts !== undefined) {
       if (signals.rts) {
         value |= TIOCM.TIOCM_RTS
       }
     }
-    
+
     view.setUint32(0, value, true)
     ioctl(this.fd, IOCTL.TIOCMSET, bits)
   }
-  
+
   /**
    * Check if the port is open
    */
   get isPortOpen(): boolean {
     return this.isOpen
   }
-  
+
   /**
    * Get the port path
    */
   get path(): string {
     return this.options.path
   }
-  
+
   /**
    * Clean up resources on object destruction
    */

@@ -25,7 +25,7 @@ const libcSymbols = {
     result: 'isize' as const,
     nonblocking: true,
   },
-  
+
   // Terminal control
   tcgetattr: {
     parameters: ['i32', 'buffer'] as const,
@@ -51,7 +51,7 @@ const libcSymbols = {
     parameters: ['i32', 'i32'] as const,
     result: 'i32' as const,
   },
-  
+
   // Baud rate functions
   cfsetispeed: {
     parameters: ['buffer', 'u32'] as const,
@@ -69,19 +69,19 @@ const libcSymbols = {
     parameters: ['buffer'] as const,
     result: 'u32' as const,
   },
-  
+
   // IOCTL for advanced control
   ioctl: {
     parameters: ['i32', 'usize', 'buffer'] as const,
     result: 'i32' as const,
   },
-  
+
   // Error handling
   __errno_location: {
     parameters: [] as const,
     result: 'pointer' as const,
   },
-  
+
   // File status
   fcntl: {
     parameters: ['i32', 'i32', 'i32'] as const,
@@ -106,9 +106,9 @@ export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
         '/usr/lib/libc.so.6',
         '/lib/libc.so.6',
       ]
-      
+
       let lastError: Error | null = null
-      
+
       for (const path of libcPaths) {
         try {
           libc = Deno.dlopen(path, libcSymbols)
@@ -117,7 +117,7 @@ export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
           lastError = err as Error
         }
       }
-      
+
       if (!libc) {
         throw lastError || new Error('Failed to load libc')
       }
@@ -125,7 +125,7 @@ export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
       throw new Error(`Failed to load libc: ${error}`)
     }
   }
-  
+
   return libc
 }
 
@@ -135,11 +135,11 @@ export function getLibc(): Deno.DynamicLibrary<typeof libcSymbols> {
 export function getErrno(): number {
   const lib = getLibc()
   const errnoPtr = lib.symbols.__errno_location()
-  
+
   if (!errnoPtr) {
     return 0
   }
-  
+
   // Read the errno value from the pointer
   const view = new Deno.UnsafePointerView(errnoPtr)
   return view.getInt32(0)
@@ -152,12 +152,12 @@ export function open(path: string, flags: number): number {
   const lib = getLibc()
   const pathBuffer = new TextEncoder().encode(path + '\0')
   const fd = lib.symbols.open(pathBuffer, flags)
-  
+
   if (fd === -1) {
     const errno = getErrno()
     throw new Error(`Failed to open ${path}: errno ${errno}`)
   }
-  
+
   return fd
 }
 
@@ -167,7 +167,7 @@ export function open(path: string, flags: number): number {
 export function close(fd: number): void {
   const lib = getLibc()
   const result = lib.symbols.close(fd)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`Failed to close fd ${fd}: errno ${errno}`)
@@ -179,8 +179,8 @@ export function close(fd: number): void {
  */
 export async function read(fd: number, buffer: Uint8Array): Promise<number> {
   const lib = getLibc()
-  const result = await lib.symbols.read(fd, buffer, buffer.length)
-  
+  const result = await lib.symbols.read(fd, buffer, BigInt(buffer.length))
+
   if (result === -1n) {
     const errno = getErrno()
     if (errno === ERRNO.EAGAIN) {
@@ -188,7 +188,7 @@ export async function read(fd: number, buffer: Uint8Array): Promise<number> {
     }
     throw new Error(`Read failed: errno ${errno}`)
   }
-  
+
   return Number(result)
 }
 
@@ -197,8 +197,8 @@ export async function read(fd: number, buffer: Uint8Array): Promise<number> {
  */
 export async function write(fd: number, buffer: Uint8Array): Promise<number> {
   const lib = getLibc()
-  const result = await lib.symbols.write(fd, buffer, buffer.length)
-  
+  const result = await lib.symbols.write(fd, buffer, BigInt(buffer.length))
+
   if (result === -1n) {
     const errno = getErrno()
     if (errno === ERRNO.EAGAIN) {
@@ -206,7 +206,7 @@ export async function write(fd: number, buffer: Uint8Array): Promise<number> {
     }
     throw new Error(`Write failed: errno ${errno}`)
   }
-  
+
   return Number(result)
 }
 
@@ -217,7 +217,7 @@ export function tcgetattr(fd: number, termiosBuffer: ArrayBuffer): void {
   const lib = getLibc()
   const buffer = new Uint8Array(termiosBuffer)
   const result = lib.symbols.tcgetattr(fd, buffer)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`tcgetattr failed: errno ${errno}`)
@@ -231,7 +231,7 @@ export function tcsetattr(fd: number, action: number, termiosBuffer: ArrayBuffer
   const lib = getLibc()
   const buffer = new Uint8Array(termiosBuffer)
   const result = lib.symbols.tcsetattr(fd, action, buffer)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`tcsetattr failed: errno ${errno}`)
@@ -244,7 +244,7 @@ export function tcsetattr(fd: number, action: number, termiosBuffer: ArrayBuffer
 export function tcflush(fd: number, queue: number): void {
   const lib = getLibc()
   const result = lib.symbols.tcflush(fd, queue)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`tcflush failed: errno ${errno}`)
@@ -257,7 +257,7 @@ export function tcflush(fd: number, queue: number): void {
 export function tcdrain(fd: number): void {
   const lib = getLibc()
   const result = lib.symbols.tcdrain(fd)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`tcdrain failed: errno ${errno}`)
@@ -270,7 +270,7 @@ export function tcdrain(fd: number): void {
 export function tcflow(fd: number, action: number): void {
   const lib = getLibc()
   const result = lib.symbols.tcflow(fd, action)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`tcflow failed: errno ${errno}`)
@@ -283,7 +283,7 @@ export function tcflow(fd: number, action: number): void {
 export function tcsendbreak(fd: number, duration: number): void {
   const lib = getLibc()
   const result = lib.symbols.tcsendbreak(fd, duration)
-  
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`tcsendbreak failed: errno ${errno}`)
@@ -297,7 +297,7 @@ export function cfsetispeed(termiosBuffer: ArrayBuffer, speed: number): void {
   const lib = getLibc()
   const buffer = new Uint8Array(termiosBuffer)
   const result = lib.symbols.cfsetispeed(buffer, speed)
-  
+
   if (result === -1) {
     throw new Error(`cfsetispeed failed`)
   }
@@ -310,7 +310,7 @@ export function cfsetospeed(termiosBuffer: ArrayBuffer, speed: number): void {
   const lib = getLibc()
   const buffer = new Uint8Array(termiosBuffer)
   const result = lib.symbols.cfsetospeed(buffer, speed)
-  
+
   if (result === -1) {
     throw new Error(`cfsetospeed failed`)
   }
@@ -322,13 +322,13 @@ export function cfsetospeed(termiosBuffer: ArrayBuffer, speed: number): void {
 export function ioctl(fd: number, request: number, argBuffer?: ArrayBuffer): number {
   const lib = getLibc()
   const buffer = argBuffer ? new Uint8Array(argBuffer) : new Uint8Array(8)
-  const result = lib.symbols.ioctl(fd, request, buffer)
-  
+  const result = lib.symbols.ioctl(fd, BigInt(request), buffer)
+
   if (result === -1) {
     const errno = getErrno()
     throw new Error(`ioctl failed: errno ${errno}`)
   }
-  
+
   return result
 }
 

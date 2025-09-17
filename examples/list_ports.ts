@@ -17,10 +17,10 @@ if (ports.length === 0) {
   console.log('\nTry running with: deno run --allow-ffi --allow-read examples/list_ports.ts')
 } else {
   console.log(`✅ Found ${ports.length} port(s):\n`)
-  
+
   for (const port of ports) {
     console.log(`📟 ${port.path}`)
-    
+
     const details = []
     if (port.manufacturer) details.push(`Manufacturer: ${port.manufacturer}`)
     if (port.serialNumber) details.push(`Serial: ${port.serialNumber}`)
@@ -28,7 +28,7 @@ if (ports.length === 0) {
     if (port.vendorId) details.push(`Vendor ID: ${port.vendorId}`)
     if (port.productId) details.push(`Product ID: ${port.productId}`)
     if (port.locationId) details.push(`Location: ${port.locationId}`)
-    
+
     if (details.length > 0) {
       for (const detail of details) {
         console.log(`   ${detail}`)

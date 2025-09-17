@@ -2,7 +2,7 @@
  * Basic SerialPort usage example
  */
 
-import { SerialPort, listPorts } from '../mod.ts'
+import { listPorts, SerialPort } from '../mod.ts'
 
 // List all available serial ports
 console.log('Scanning for serial ports...')
@@ -70,7 +70,7 @@ while (port.isPortOpen) {
     console.log(`Received: ${text}`)
     break
   }
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
 }
 
 // Close the port

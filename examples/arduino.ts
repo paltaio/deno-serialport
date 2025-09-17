@@ -4,7 +4,7 @@
  * Simply listens for incoming data
  */
 
-import { SerialPort, SerialPortError, portExists } from '../mod.ts'
+import { portExists, SerialPort, SerialPortError } from '../mod.ts'
 
 const PORT_PATH = '/dev/ttyACM0'
 const BAUD_RATE = 9600 // Standard Arduino baud rate
@@ -46,7 +46,6 @@ try {
   console.log('📡 Opening port...')
   port.open()
   console.log('✅ Port opened successfully!\n')
-
 } catch (error) {
   if (error instanceof SerialPortError) {
     console.error(`❌ Failed to open port: ${error.message}\n`)
@@ -104,7 +103,7 @@ try {
       }
     }
     // Small delay to prevent tight loop
-    await new Promise(resolve => setTimeout(resolve, 10))
+    await new Promise((resolve) => setTimeout(resolve, 10))
   }
 } finally {
   // Cleanup
