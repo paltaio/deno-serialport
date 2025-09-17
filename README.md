@@ -5,22 +5,22 @@ FFI-based serial port library for Deno on Linux. Zero dependencies.
 ## Install
 
 ```typescript
-import { SerialPort } from "jsr:@deno/serialport"  // Coming soon
+import { SerialPort } from 'jsr:@deno/serialport' // Coming soon
 // For now: import from local mod.ts
 ```
 
 ## Usage
 
 ```typescript
-import { SerialPort } from "./mod.ts"
+import { SerialPort } from './mod.ts'
 
 const port = new SerialPort({
-  path: "/dev/ttyUSB0",
-  baudRate: 115200
+  path: '/dev/ttyUSB0',
+  baudRate: 115200,
 })
 
 await port.open()
-await port.write("data")
+await port.write('data')
 const response = await port.read()
 await port.close()
 ```
@@ -41,6 +41,7 @@ new SerialPort({
 ```
 
 Methods:
+
 - `open()` / `close()`
 - `write(data: string | Uint8Array)`
 - `read(size?: number)`
@@ -50,18 +51,18 @@ Methods:
 ### List Ports
 
 ```typescript
-import { listPorts } from "./mod.ts"
+import { listPorts } from './mod.ts'
 const ports = await listPorts()
 ```
 
 ### Parsers
 
 ```typescript
-import { SerialPort, ReadlineParser } from "./mod.ts"
+import { ReadlineParser, SerialPort } from './mod.ts'
 
-const parser = new ReadlineParser({ delimiter: "\n" })
+const parser = new ReadlineParser({ delimiter: '\n' })
 port.pipe(parser)
-parser.on("data", console.log)
+parser.on('data', console.log)
 ```
 
 Available: `DelimiterParser`, `ReadlineParser`, `ByteLengthParser`, `InterByteTimeoutParser`, `RegexParser`
