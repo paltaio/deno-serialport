@@ -11,19 +11,9 @@
     "indentWidth": 2,
     "semiColons": false,
     "singleQuote": true,
-    "proseWrap": "preserve",
-    "exclude": [
-      "**/node_modules",
-      "**/dist",
-      "**/build"
-    ]
-  },
-  "lint": {
-    "exclude": [
-      "**/node_modules",
-      "**/dist",
-      "**/build"
-    ]
+    "trailingCommas": "onlyMultiLine",
+    "useTabs": false,
+    "proseWrap": "preserve"
   },
   "compilerOptions": {
     "strict": true,
