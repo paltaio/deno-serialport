@@ -1,9 +1,9 @@
 {
-  "$schema": "https://raw.githubusercontent.com/denoland/deno/refs/heads/main/cli/schemas/config-file.v1.json",
   "lock": true,
   "tasks": {
     "dev": "deno run --watch main.ts",
     "format": "deno fmt",
+    "check": "deno check mod.ts",
     "lint": "deno lint"
   },
   "fmt": {
@@ -34,7 +34,9 @@
     "noUncheckedIndexedAccess": true,
     "lib": [
       "deno.ns",
-      "deno.unstable"
+      "deno.unstable",
+      "dom",
+      "esnext"
     ]
   },
   "imports": {
