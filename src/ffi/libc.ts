@@ -179,6 +179,7 @@ export function close(fd: number): void {
  */
 export async function read(fd: number, buffer: Uint8Array): Promise<number> {
   const lib = getLibc()
+  // @ts-expect-error - TypeScript 5.7+ generic Uint8Array issue. FFI works correctly at runtime.
   const result = await lib.symbols.read(fd, buffer, BigInt(buffer.length))
 
   if (result === -1n) {
@@ -197,6 +198,7 @@ export async function read(fd: number, buffer: Uint8Array): Promise<number> {
  */
 export async function write(fd: number, buffer: Uint8Array): Promise<number> {
   const lib = getLibc()
+  // @ts-expect-error - TypeScript 5.7+ generic Uint8Array issue. FFI works correctly at runtime.
   const result = await lib.symbols.write(fd, buffer, BigInt(buffer.length))
 
   if (result === -1n) {
