@@ -7,7 +7,7 @@
   "tasks": {
     "dev": "deno run --watch main.ts",
     "format": "deno fmt",
-    "check": "deno check mod.ts",
+    "check": "deno check examples && deno check src && deno check mod.ts",
     "lint": "deno lint"
   },
   "fmt": {
