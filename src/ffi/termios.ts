@@ -147,7 +147,7 @@ export const CC = {
 } as const
 
 // Common baud rate mappings
-export const BAUD_RATE_MAP = new Map<number, number>([
+export const BAUD_RATE_MAP: Map<number, number> = new Map([
   [50, CFLAG.B50],
   [75, CFLAG.B75],
   [110, CFLAG.B110],
