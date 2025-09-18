@@ -239,9 +239,11 @@ export async function read(fd: number, buffer: Uint8Array): Promise<number> {
 
     // Handle expected non-blocking I/O conditions
     // EAGAIN/EWOULDBLOCK: No data available right now (normal for non-blocking)
-    if (errno === ERRNO.EAGAIN ||           // Linux: 11
-        errno === ERRNO.EWOULDBLOCK ||      // Linux: 11 (same as EAGAIN)
-        errno === ERRNO.EAGAIN_MACOS) {     // macOS: 35
+    if (
+      errno === ERRNO.EAGAIN || // Linux: 11
+      errno === ERRNO.EWOULDBLOCK || // Linux: 11 (same as EAGAIN)
+      errno === ERRNO.EAGAIN_MACOS
+    ) { // macOS: 35
       return 0 // No data available, return 0 bytes read
     }
 
@@ -274,9 +276,11 @@ export async function write(fd: number, buffer: Uint8Array): Promise<number> {
 
     // Handle expected non-blocking I/O conditions
     // EAGAIN/EWOULDBLOCK: Cannot write right now (normal for non-blocking)
-    if (errno === ERRNO.EAGAIN ||           // Linux: 11
-        errno === ERRNO.EWOULDBLOCK ||      // Linux: 11 (same as EAGAIN)
-        errno === ERRNO.EAGAIN_MACOS) {     // macOS: 35
+    if (
+      errno === ERRNO.EAGAIN || // Linux: 11
+      errno === ERRNO.EWOULDBLOCK || // Linux: 11 (same as EAGAIN)
+      errno === ERRNO.EAGAIN_MACOS
+    ) { // macOS: 35
       return 0 // Would block, return 0 bytes written
     }
 

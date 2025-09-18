@@ -8,14 +8,20 @@ import { getPlatformConfig, isDarwin } from '../utils/platform.ts'
 // Get platform configuration
 const platformConfig = getPlatformConfig()
 
-// termios optional_actions for tcsetattr()
+/**
+ * termios optional_actions for tcsetattr()
+ * Controls when changes to terminal attributes take effect
+ */
 export const TCSA = {
   TCSANOW: 0, // Change immediately
   TCSADRAIN: 1, // Change when pending output is written
   TCSAFLUSH: 2, // Change after pending I/O is discarded
 } as const
 
-// Input flags (c_iflag)
+/**
+ * Input flags (c_iflag)
+ * Controls input processing options for the terminal
+ */
 export const IFLAG = {
   IGNBRK: 0x0001, // Ignore break condition
   BRKINT: 0x0002, // Break causes interrupt
@@ -34,7 +40,10 @@ export const IFLAG = {
   IUTF8: 0x4000, // Input is UTF8
 } as const
 
-// Output flags (c_oflag)
+/**
+ * Output flags (c_oflag)
+ * Controls output processing options for the terminal
+ */
 export const OFLAG = {
   OPOST: 0x0001, // Post-process output
   OLCUC: 0x0002, // Map lowercase to uppercase
@@ -47,20 +56,20 @@ export const OFLAG = {
 } as const
 
 // Control flags (c_cflag) - platform specific
-type CFLAGType = {
-  readonly CSIZE: number;
-  readonly CS5: number;
-  readonly CS6: number;
-  readonly CS7: number;
-  readonly CS8: number;
-  readonly CSTOPB: number;
-  readonly CREAD: number;
-  readonly PARENB: number;
-  readonly PARODD: number;
-  readonly HUPCL: number;
-  readonly CLOCAL: number;
-  readonly CRTSCTS: number;
-  readonly [key: string]: number;
+export type CFLAGType = {
+  readonly CSIZE: number
+  readonly CS5: number
+  readonly CS6: number
+  readonly CS7: number
+  readonly CS8: number
+  readonly CSTOPB: number
+  readonly CREAD: number
+  readonly PARENB: number
+  readonly PARODD: number
+  readonly HUPCL: number
+  readonly CLOCAL: number
+  readonly CRTSCTS: number
+  readonly [key: string]: number
 }
 
 function getCFLAG(): CFLAGType {
@@ -90,7 +99,6 @@ function getCFLAG(): CFLAGType {
 
       // macOS specific hardware flow control
       CRTSCTS: 0x00030000, // RTS/CTS flow control
-
       // Note: On macOS, baud rates are actual values, not bit flags
       // They are handled by the platform config baudRateConstants
     } as const
@@ -160,9 +168,16 @@ function getCFLAG(): CFLAGType {
   }
 }
 
+/**
+ * Control flags (c_cflag)
+ * Controls hardware control options, baud rate, parity, and stop bits
+ */
 export const CFLAG: CFLAGType = getCFLAG()
 
-// Local flags (c_lflag)
+/**
+ * Local flags (c_lflag)
+ * Controls terminal local modes including echo and signal handling
+ */
 export const LFLAG = {
   ISIG: 0x0001, // Enable signals
   ICANON: 0x0002, // Canonical mode
@@ -183,27 +198,31 @@ export const LFLAG = {
 } as const
 
 // Control characters indices (c_cc)
-type CCType = {
-  readonly VINTR: number;
-  readonly VQUIT: number;
-  readonly VERASE: number;
-  readonly VKILL: number;
-  readonly VEOF: number;
-  readonly VTIME: number;
-  readonly VMIN: number;
-  readonly VSWTC: number;
-  readonly VSTART: number;
-  readonly VSTOP: number;
-  readonly VSUSP: number;
-  readonly VEOL: number;
-  readonly VREPRINT: number;
-  readonly VDISCARD: number;
-  readonly VWERASE: number;
-  readonly VLNEXT: number;
-  readonly VEOL2: number;
-  readonly NCCS: number;
+export type CCType = {
+  readonly VINTR: number
+  readonly VQUIT: number
+  readonly VERASE: number
+  readonly VKILL: number
+  readonly VEOF: number
+  readonly VTIME: number
+  readonly VMIN: number
+  readonly VSWTC: number
+  readonly VSTART: number
+  readonly VSTOP: number
+  readonly VSUSP: number
+  readonly VEOL: number
+  readonly VREPRINT: number
+  readonly VDISCARD: number
+  readonly VWERASE: number
+  readonly VLNEXT: number
+  readonly VEOL2: number
+  readonly NCCS: number
 }
 
+/**
+ * Control characters indices (c_cc)
+ * Defines special character handling like interrupt, quit, and flow control
+ */
 export const CC: CCType = {
   VINTR: 0, // Interrupt character
   VQUIT: 1, // Quit character
@@ -225,31 +244,35 @@ export const CC: CCType = {
   NCCS: isDarwin() ? 20 : 19, // Size of c_cc array
 } as const
 
+// Baud rate mapping
+export const baudRateMap = {
+  0: platformConfig.baudRateConstants.B0,
+  50: platformConfig.baudRateConstants.B50,
+  75: platformConfig.baudRateConstants.B75,
+  110: platformConfig.baudRateConstants.B110,
+  134: platformConfig.baudRateConstants.B134,
+  150: platformConfig.baudRateConstants.B150,
+  200: platformConfig.baudRateConstants.B200,
+  300: platformConfig.baudRateConstants.B300,
+  600: platformConfig.baudRateConstants.B600,
+  1200: platformConfig.baudRateConstants.B1200,
+  1800: platformConfig.baudRateConstants.B1800,
+  2400: platformConfig.baudRateConstants.B2400,
+  4800: platformConfig.baudRateConstants.B4800,
+  9600: platformConfig.baudRateConstants.B9600,
+  19200: platformConfig.baudRateConstants.B19200,
+  38400: platformConfig.baudRateConstants.B38400,
+  57600: platformConfig.baudRateConstants.B57600,
+  115200: platformConfig.baudRateConstants.B115200,
+  230400: platformConfig.baudRateConstants.B230400,
+} as const
+
 // Get baud rate value for the platform
 export function getBaudRateValue(baudRate: number): number {
-  const baudRates = platformConfig.baudRateConstants
-
   // Check if we have a direct mapping
-  switch (baudRate) {
-    case 0: return baudRates.B0
-    case 50: return baudRates.B50
-    case 75: return baudRates.B75
-    case 110: return baudRates.B110
-    case 134: return baudRates.B134
-    case 150: return baudRates.B150
-    case 200: return baudRates.B200
-    case 300: return baudRates.B300
-    case 600: return baudRates.B600
-    case 1200: return baudRates.B1200
-    case 1800: return baudRates.B1800
-    case 2400: return baudRates.B2400
-    case 4800: return baudRates.B4800
-    case 9600: return baudRates.B9600
-    case 19200: return baudRates.B19200
-    case 38400: return baudRates.B38400
-    case 57600: return baudRates.B57600
-    case 115200: return baudRates.B115200
-    case 230400: return baudRates.B230400
+  const mappedValue = baudRateMap[baudRate as keyof typeof baudRateMap]
+  if (mappedValue !== undefined) {
+    return mappedValue
   }
 
   // For macOS, the baud rate is the actual value

@@ -25,11 +25,11 @@ export const ERRNO = {
   SUCCESS: 0,
   EPERM: 1,
   ENOENT: 2,
-  EINTR: 4,     // Interrupted system call
+  EINTR: 4, // Interrupted system call
   EIO: 5,
   ENXIO: 6,
   EBADF: 9,
-  EAGAIN: 11,   // Resource temporarily unavailable (Linux value)
+  EAGAIN: 11, // Resource temporarily unavailable (Linux value)
   EACCES: 13,
   EBUSY: 16,
   ENODEV: 19,
@@ -37,7 +37,7 @@ export const ERRNO = {
   ENOTTY: 25,
   ENOSYS: 38,
   // Platform-specific aliases
-  EWOULDBLOCK: 11,  // Same as EAGAIN on Linux/macOS (though macOS uses 35)
+  EWOULDBLOCK: 11, // Same as EAGAIN on Linux/macOS (though macOS uses 35)
   EAGAIN_MACOS: 35, // EAGAIN value on macOS
 } as const
 
