@@ -1,12 +1,11 @@
 # deno-serialport
 
-FFI-based serial port library for Deno on Linux. Zero dependencies.
+FFI-based serial port library for Deno on Linux and macOS. Zero dependencies.
 
 ## Install
 
 ```typescript
-import { SerialPort } from 'jsr:@deno/serialport' // Coming soon
-// For now: import from local mod.ts
+import { SerialPort } from 'jsr:@paltaio/serialport'
 ```
 
 ## Usage
@@ -82,6 +81,7 @@ while (true) {
 ```
 
 Available parsers:
+
 - `DelimiterParser` - Split data on any delimiter
 - `ReadlineParser` - Split data on line endings (returns strings)
 - `ByteLengthParser` - Emit fixed-length chunks
@@ -96,11 +96,12 @@ Available parsers:
 ## Platform Support
 
 - ✅ **Linux** - Full support
-- ⚠️  **macOS** - Partial support (see limitations below)
+- ⚠️ **macOS** - Partial support (see limitations below)
 
 ### macOS Limitations
 
 Due to Deno FFI's inability to handle ioctl's varargs interface, modem control signals are **not available on macOS**:
+
 - `getSignals()` returns default false values
 - `setSignals()` operations are silently ignored
 - DTR, RTS, CTS, DSR signals cannot be read or set
