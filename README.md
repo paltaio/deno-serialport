@@ -45,8 +45,9 @@ Methods:
 - `open()` / `close()`
 - `write(data: string | Uint8Array)`
 - `read(size?: number)`
-- `flush()` / `drain()`
-- `isOpen()`
+- `flush(direction?: 'input' | 'output' | 'both')`
+- `isPortOpen`
+- `readable` - ReadableStream for use with parsers
 
 ### List Ports
 
@@ -60,12 +61,30 @@ const ports = await listPorts()
 ```typescript
 import { ReadlineParser, SerialPort } from './mod.ts'
 
-const parser = new ReadlineParser({ delimiter: '\n' })
-port.pipe(parser)
-parser.on('data', console.log)
+const port = new SerialPort({
+  path: '/dev/ttyUSB0',
+  baudRate: 115200,
+})
+
+await port.open()
+
+// Use ReadlineParser for line-based protocols
+const parser = new ReadlineParser()
+const reader = port.readable
+  .pipeThrough(parser)
+  .getReader()
+
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) break
+  console.log('Line:', value) // value is a string
+}
 ```
 
-Available: `DelimiterParser`, `ReadlineParser`, `ByteLengthParser`, `InterByteTimeoutParser`, `RegexParser`
+Available parsers:
+- `DelimiterParser` - Split data on any delimiter
+- `ReadlineParser` - Split data on line endings (returns strings)
+- `ByteLengthParser` - Emit fixed-length chunks
 
 ## Requirements
 
