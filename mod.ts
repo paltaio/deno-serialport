@@ -1,5 +1,5 @@
 /**
- * Deno SerialPort - Pure FFI-based serial port library for Linux
+ * Deno SerialPort - Pure FFI-based serial port library for Linux and macOS
  *
  * @module
  *
@@ -13,7 +13,7 @@
  *
  * // Open a port
  * const port = new SerialPort({
- *   path: '/dev/ttyUSB0',
+ *   path: '/dev/ttyUSB0', // or '/dev/cu.usbmodem101'
  *   baudRate: 115200,
  * })
  *
@@ -42,6 +42,15 @@ export {
 
 // Utilities
 export { listPorts, portExists } from './src/utils/list.ts'
+
+// Parsers
+export { BaseParser, ByteLengthParser, DelimiterParser, ReadlineParser } from './src/parsers/mod.ts'
+export type {
+  BaseParserOptions,
+  ByteLengthParserOptions,
+  DelimiterParserOptions,
+  ReadlineParserOptions,
+} from './src/parsers/mod.ts'
 
 // Constants for advanced usage
 export { CC, CFLAG, getBaudRateValue, IFLAG, LFLAG, OFLAG, TCSA } from './src/ffi/termios.ts'
