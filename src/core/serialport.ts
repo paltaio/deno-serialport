@@ -44,6 +44,7 @@ export class SerialPort {
   private readBuffer: Uint8Array
   private isOpen = false
   private originalTermios: ArrayBuffer | null = null
+  private _readableStream: ReadableStream<Uint8Array> | null = null
 
   constructor(options: SerialPortOptions) {
     // Set defaults
@@ -325,6 +326,7 @@ export class SerialPort {
       this.fd = null
       this.isOpen = false
       this.originalTermios = null
+      this._readableStream = null
     }
   }
 
@@ -574,13 +576,16 @@ export class SerialPort {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
 
+    // Return existing stream if already created
+    if (this._readableStream) {
+      return this._readableStream
+    }
+
     const fd = this.fd
     const readBuffer = new Uint8Array(this.options.highWaterMark)
 
-    return new ReadableStream<Uint8Array>({
-      start: () => {
-        // Initialization if needed
-      },
+    // Create and cache the stream
+    this._readableStream = new ReadableStream<Uint8Array>({
       pull: async (controller) => {
         try {
           const bytesRead = await read(fd, readBuffer)
@@ -595,9 +600,12 @@ export class SerialPort {
         }
       },
       cancel: () => {
-        // Stream cancelled, could trigger port close if desired
+        // Stream cancelled
+        this._readableStream = null
       },
     })
+
+    return this._readableStream
   }
 
   /**
