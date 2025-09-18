@@ -70,9 +70,23 @@ Available: `DelimiterParser`, `ReadlineParser`, `ByteLengthParser`, `InterByteTi
 ## Requirements
 
 - Deno 2.4.3+
-- Linux (uses termios)
+- Linux or macOS
 - Permissions: `--allow-ffi --allow-read`
-- Serial port access (dialout group or sudo)
+- Serial port access (dialout group on Linux, or device permissions on macOS)
+
+## Platform Support
+
+- ✅ **Linux** - Full support
+- ⚠️  **macOS** - Partial support (see limitations below)
+
+### macOS Limitations
+
+Due to Deno FFI's inability to handle ioctl's varargs interface, modem control signals are **not available on macOS**:
+- `getSignals()` returns default false values
+- `setSignals()` operations are silently ignored
+- DTR, RTS, CTS, DSR signals cannot be read or set
+
+**Note:** Basic serial communication (read/write) works perfectly on macOS. This is a fundamental limitation of Deno's FFI system that cannot be worked around in pure TypeScript.
 
 ## Dev
 
