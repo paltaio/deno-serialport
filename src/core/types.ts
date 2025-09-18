@@ -25,8 +25,11 @@ export interface SerialPortOptions {
   rtscts?: boolean
 
   /** Software flow control (XON/XOFF) */
+  /** Enable XON/XOFF flow control on output */
   xon?: boolean
+  /** Enable XON/XOFF flow control on input */
   xoff?: boolean
+  /** Allow any character to restart output */
   xany?: boolean
 
   /** Automatically open the port on instantiation */
@@ -123,8 +126,11 @@ export enum SerialPortErrorCode {
  * Serial port error
  */
 export class SerialPortError extends Error {
+  /** Error code indicating the type of error */
   code: SerialPortErrorCode
+  /** System error number if applicable */
   errno?: number
+  /** System call that failed if applicable */
   syscall?: string
 
   constructor(
