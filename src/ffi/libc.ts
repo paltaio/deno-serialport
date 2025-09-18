@@ -223,6 +223,11 @@ export function close(fd: number): void {
 
 /**
  * Read from a file descriptor
+ *
+ * For non-blocking I/O:
+ * - Returns 0 when no data is available (EAGAIN/EWOULDBLOCK)
+ * - Returns number of bytes read when data is available
+ * - Throws error for actual failures
  */
 export async function read(fd: number, buffer: Uint8Array): Promise<number> {
   const lib = getLibc()
@@ -231,9 +236,20 @@ export async function read(fd: number, buffer: Uint8Array): Promise<number> {
 
   if (result === -1n) {
     const errno = getErrno()
-    if (errno === ERRNO.EAGAIN) {
-      return 0 // Would block, return 0 bytes read
+
+    // Handle expected non-blocking I/O conditions
+    // EAGAIN/EWOULDBLOCK: No data available right now (normal for non-blocking)
+    if (errno === ERRNO.EAGAIN ||           // Linux: 11
+        errno === ERRNO.EWOULDBLOCK ||      // Linux: 11 (same as EAGAIN)
+        errno === ERRNO.EAGAIN_MACOS) {     // macOS: 35
+      return 0 // No data available, return 0 bytes read
     }
+
+    // EINTR: Interrupted by signal (rare for non-blocking, but possible)
+    if (errno === ERRNO.EINTR) {
+      return 0 // Interrupted, caller should retry
+    }
+
     throw new Error(`Read failed: errno ${errno}`)
   }
 
@@ -242,6 +258,11 @@ export async function read(fd: number, buffer: Uint8Array): Promise<number> {
 
 /**
  * Write to a file descriptor
+ *
+ * For non-blocking I/O:
+ * - Returns 0 when write would block (EAGAIN/EWOULDBLOCK)
+ * - Returns number of bytes written when successful
+ * - Throws error for actual failures
  */
 export async function write(fd: number, buffer: Uint8Array): Promise<number> {
   const lib = getLibc()
@@ -250,9 +271,20 @@ export async function write(fd: number, buffer: Uint8Array): Promise<number> {
 
   if (result === -1n) {
     const errno = getErrno()
-    if (errno === ERRNO.EAGAIN) {
+
+    // Handle expected non-blocking I/O conditions
+    // EAGAIN/EWOULDBLOCK: Cannot write right now (normal for non-blocking)
+    if (errno === ERRNO.EAGAIN ||           // Linux: 11
+        errno === ERRNO.EWOULDBLOCK ||      // Linux: 11 (same as EAGAIN)
+        errno === ERRNO.EAGAIN_MACOS) {     // macOS: 35
       return 0 // Would block, return 0 bytes written
     }
+
+    // EINTR: Interrupted by signal
+    if (errno === ERRNO.EINTR) {
+      return 0 // Interrupted, caller should retry
+    }
+
     throw new Error(`Write failed: errno ${errno}`)
   }
 

@@ -557,17 +557,19 @@ export class SerialPort {
    * Create a readable stream for this port
    * This allows the port to be used with parsers and stream transformations
    *
+   * NOTE: This property returns a cached ReadableStream. Once a reader is obtained
+   * from this stream, it locks the stream. To work around this, either:
+   * 1. Keep a single reader for the entire session
+   * 2. Use the createReadableStream() method to get a new independent stream
+   *
    * @example
    * ```typescript
-   * const parser = new ReadlineParser()
-   * const reader = port.readable
-   *   .pipeThrough(parser)
-   *   .getReader()
-   *
+   * // For single reader usage (recommended)
+   * const reader = port.readable.getReader()
    * while (true) {
    *   const { done, value } = await reader.read()
    *   if (done) break
-   *   console.log('Line:', value)
+   *   console.log('Data:', value)
    * }
    * ```
    */
