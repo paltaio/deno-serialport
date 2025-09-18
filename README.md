@@ -4,14 +4,14 @@ FFI-based serial port library for Deno on Linux and macOS. Zero dependencies.
 
 ## Install
 
-```typescript
-import { SerialPort } from 'jsr:@paltaio/serialport'
+```bash
+deno install jsr:@paltaio/serialport
 ```
 
 ## Usage
 
 ```typescript
-import { SerialPort } from './mod.ts'
+import { SerialPort } from '@paltaio/serialport'
 
 const port = new SerialPort({
   path: '/dev/ttyUSB0',
@@ -51,14 +51,15 @@ Methods:
 ### List Ports
 
 ```typescript
-import { listPorts } from './mod.ts'
+import { listPorts } from '@paltaio/serialport'
+
 const ports = await listPorts()
 ```
 
 ### Parsers
 
 ```typescript
-import { ReadlineParser, SerialPort } from './mod.ts'
+import { ReadlineParser, SerialPort } from '@paltaio/serialport'
 
 const port = new SerialPort({
   path: '/dev/ttyUSB0',
