@@ -244,7 +244,10 @@ export const CC: CCType = {
   NCCS: isDarwin() ? 20 : 19, // Size of c_cc array
 } as const
 
-// Baud rate mapping
+/**
+ * Baud rate mapping to platform-specific constants
+ * Maps common baud rates to their system-specific values
+ */
 export const baudRateMap = {
   0: platformConfig.baudRateConstants.B0,
   50: platformConfig.baudRateConstants.B50,
@@ -267,7 +270,12 @@ export const baudRateMap = {
   230400: platformConfig.baudRateConstants.B230400,
 } as const
 
-// Get baud rate value for the platform
+/**
+ * Get the platform-specific baud rate value
+ * Converts a numeric baud rate to the appropriate system constant
+ * @param baudRate - The desired baud rate (e.g., 9600, 115200)
+ * @returns The platform-specific baud rate constant or value
+ */
 export function getBaudRateValue(baudRate: number): number {
   // Check if we have a direct mapping
   const mappedValue = baudRateMap[baudRate as keyof typeof baudRateMap]

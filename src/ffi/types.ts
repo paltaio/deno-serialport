@@ -20,7 +20,10 @@ const platformConfig: PlatformConfig = getPlatformConfig()
 // Termios structure size (platform-specific)
 export const TERMIOS_SIZE = platformConfig.termiosSize
 
-// Common errno values
+/**
+ * Common errno values for system call error handling
+ * Standard POSIX error numbers used across Unix-like systems
+ */
 export const ERRNO = {
   SUCCESS: 0,
   EPERM: 1,
@@ -41,7 +44,10 @@ export const ERRNO = {
   EAGAIN_MACOS: 35, // EAGAIN value on macOS
 } as const
 
-// Open flags
+/**
+ * File open flags for the open() system call
+ * Used to specify file access modes and options
+ */
 export const O_FLAGS = {
   O_RDONLY: 0x0000,
   O_WRONLY: 0x0001,
@@ -55,10 +61,16 @@ export const O_FLAGS = {
   O_SYNC: 0x101000,
 } as const
 
-// IOCTL commands for serial ports (platform-specific)
+/**
+ * IOCTL commands for serial port control
+ * Platform-specific values for terminal I/O control operations
+ */
 export const IOCTL = platformConfig.ioctlConstants
 
-// Modem control lines
+/**
+ * Modem control line flags
+ * Used with TIOCMGET/TIOCMSET to read/set modem signals
+ */
 export const TIOCM = {
   TIOCM_LE: 0x001,
   TIOCM_DTR: 0x002,
@@ -73,7 +85,10 @@ export const TIOCM = {
   TIOCM_RI: 0x080,
 } as const
 
-// Flush queue selectors
+/**
+ * Flush queue selectors for tcflush()
+ * Control which queues to flush (input, output, or both)
+ */
 export const FLUSH = {
   TCIFLUSH: 0,
   TCOFLUSH: 1,
