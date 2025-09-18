@@ -552,6 +552,55 @@ export class SerialPort {
   }
 
   /**
+   * Create a readable stream for this port
+   * This allows the port to be used with parsers and stream transformations
+   *
+   * @example
+   * ```typescript
+   * const parser = new ReadlineParser()
+   * const reader = port.readable
+   *   .pipeThrough(parser)
+   *   .getReader()
+   *
+   * while (true) {
+   *   const { done, value } = await reader.read()
+   *   if (done) break
+   *   console.log('Line:', value)
+   * }
+   * ```
+   */
+  get readable(): ReadableStream<Uint8Array> {
+    if (!this.isOpen || this.fd === null) {
+      throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
+    }
+
+    const fd = this.fd
+    const readBuffer = new Uint8Array(this.options.highWaterMark)
+
+    return new ReadableStream<Uint8Array>({
+      start: () => {
+        // Initialization if needed
+      },
+      pull: async (controller) => {
+        try {
+          const bytesRead = await read(fd, readBuffer)
+          if (bytesRead === 0) {
+            // No data available, wait a bit before next read
+            await new Promise((resolve) => setTimeout(resolve, 10))
+          } else if (bytesRead > 0) {
+            controller.enqueue(readBuffer.slice(0, bytesRead))
+          }
+        } catch (error) {
+          controller.error(error)
+        }
+      },
+      cancel: () => {
+        // Stream cancelled, could trigger port close if desired
+      },
+    })
+  }
+
+  /**
    * Clean up resources on object destruction
    */
   [Symbol.dispose](): void {
