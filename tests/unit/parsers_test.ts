@@ -4,11 +4,7 @@
 
 import { assertEquals, assertRejects } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
-import {
-  ByteLengthParser,
-  DelimiterParser,
-  ReadlineParser,
-} from '../../src/parsers/mod.ts'
+import { ByteLengthParser, DelimiterParser, ReadlineParser } from '../../src/parsers/mod.ts'
 
 describe('DelimiterParser', () => {
   it('should split data on delimiter', async () => {
