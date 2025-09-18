@@ -5,7 +5,7 @@
  *
  * @example
  * ```typescript
- * import { SerialPort, listPorts } from '@deno/serialport'
+ * import { SerialPort, listPorts } from '@paltaio/serialport'
  *
  * // List available ports
  * const ports = await listPorts()
