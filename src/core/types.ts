@@ -116,6 +116,7 @@ export enum SerialPortErrorCode {
   PORT_CLOSED = 'PORT_CLOSED',
   DISCONNECTED = 'DISCONNECTED',
   SYSTEM_ERROR = 'SYSTEM_ERROR',
+  OPERATION_NOT_SUPPORTED = 'OPERATION_NOT_SUPPORTED',
 }
 
 /**
@@ -129,14 +130,16 @@ export class SerialPortError extends Error {
   constructor(
     message: string,
     code: SerialPortErrorCode = SerialPortErrorCode.UNKNOWN,
-    errno?: number,
+    cause?: Error | number,
     syscall?: string,
   ) {
     super(message)
     this.name = 'SerialPortError'
     this.code = code
-    if (errno !== undefined) {
-      this.errno = errno
+    if (typeof cause === 'number') {
+      this.errno = cause
+    } else if (cause instanceof Error) {
+      this.cause = cause
     }
     if (syscall !== undefined) {
       this.syscall = syscall

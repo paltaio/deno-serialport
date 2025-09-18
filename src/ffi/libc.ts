@@ -78,7 +78,7 @@ function buildSymbols() {
 
     // IOCTL for advanced control
     ioctl: {
-      parameters: ['i32', 'usize', 'pointer'] as const,
+      parameters: ['i32', 'usize', 'buffer'] as const,
       result: 'i32' as const,
     },
 
@@ -371,16 +371,10 @@ export function cfsetospeed(termiosBuffer: ArrayBuffer, speed: number): void {
 export function ioctl(fd: number, request: number, argBuffer?: ArrayBuffer): number {
   const lib = getLibc()
 
-  // Create a pointer to the buffer
-  let ptr: Deno.PointerValue = null
+  // Convert ArrayBuffer to Uint8Array for FFI
+  const buffer = argBuffer ? new Uint8Array(argBuffer) : new Uint8Array(0)
 
-  if (argBuffer) {
-    const buffer = new Uint8Array(argBuffer)
-    // Create an unsafe pointer to the buffer
-    ptr = Deno.UnsafePointer.of(buffer)
-  }
-
-  const result = lib.symbols.ioctl(fd, BigInt(request), ptr)
+  const result = lib.symbols.ioctl(fd, BigInt(request), buffer)
 
   if (result === -1) {
     const errno = getErrno()

@@ -430,51 +430,111 @@ export class SerialPort {
 
   /**
    * Get modem control signals
+   *
+   * NOTE: On macOS, this functionality is not supported due to Deno FFI limitations
+   * with ioctl's varargs interface. The operation will return default values.
    */
   getSignals(): SerialPortSignals {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
 
-    const bits = new ArrayBuffer(4)
-    ioctl(this.fd, IOCTL.TIOCMGET, bits)
-    const view = new DataView(bits)
-    const status = view.getUint32(0, true)
+    // On macOS, ioctl with TIOCMGET fails due to Deno FFI's inability to handle varargs
+    if (isDarwin()) {
+      return {
+        cts: false,
+        dsr: false,
+        dcd: false,
+        ring: false,
+      }
+    }
 
-    return {
-      cts: (status & TIOCM.TIOCM_CTS) !== 0,
-      dsr: (status & TIOCM.TIOCM_DSR) !== 0,
-      dcd: (status & TIOCM.TIOCM_CD) !== 0,
-      ring: (status & TIOCM.TIOCM_RI) !== 0,
+    try {
+      const bits = new ArrayBuffer(4)
+      ioctl(this.fd, IOCTL.TIOCMGET, bits)
+      const view = new DataView(bits)
+      const status = view.getUint32(0, true)
+
+      return {
+        cts: (status & TIOCM.TIOCM_CTS) !== 0,
+        dsr: (status & TIOCM.TIOCM_DSR) !== 0,
+        dcd: (status & TIOCM.TIOCM_CD) !== 0,
+        ring: (status & TIOCM.TIOCM_RI) !== 0,
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('errno 25')) {
+        // ENOTTY - inappropriate ioctl for device (e.g., USB-serial adapters)
+        throw new SerialPortError(
+          'Modem control signals not supported by this device',
+          SerialPortErrorCode.OPERATION_NOT_SUPPORTED,
+          error,
+        )
+      } else if (error instanceof Error && error.message.includes('errno 19')) {
+        // ENODEV - operation not supported by device
+        throw new SerialPortError(
+          'Modem control signals not supported by this device',
+          SerialPortErrorCode.OPERATION_NOT_SUPPORTED,
+          error,
+        )
+      }
+      throw error
     }
   }
 
   /**
    * Set modem control signals
+   *
+   * NOTE: On macOS, this functionality is not supported due to Deno FFI limitations
+   * with ioctl's varargs interface. The operation will be silently ignored.
    */
   setSignals(signals: SetSignals): void {
     if (!this.isOpen || this.fd === null) {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
 
-    const bits = new ArrayBuffer(4)
-    const view = new DataView(bits)
-    let value = 0
-
-    if (signals.dtr !== undefined) {
-      if (signals.dtr) {
-        value |= TIOCM.TIOCM_DTR
-      }
+    // On macOS, ioctl with TIOCMSET fails due to Deno FFI's inability to handle varargs
+    if (isDarwin()) {
+      // Silently ignore on macOS - modem control signals not supported
+      return
     }
 
-    if (signals.rts !== undefined) {
-      if (signals.rts) {
-        value |= TIOCM.TIOCM_RTS
-      }
-    }
+    try {
+      const bits = new ArrayBuffer(4)
+      const view = new DataView(bits)
+      let value = 0
 
-    view.setUint32(0, value, true)
-    ioctl(this.fd, IOCTL.TIOCMSET, bits)
+      if (signals.dtr !== undefined) {
+        if (signals.dtr) {
+          value |= TIOCM.TIOCM_DTR
+        }
+      }
+
+      if (signals.rts !== undefined) {
+        if (signals.rts) {
+          value |= TIOCM.TIOCM_RTS
+        }
+      }
+
+      view.setUint32(0, value, true)
+      ioctl(this.fd, IOCTL.TIOCMSET, bits)
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('errno 25')) {
+        // ENOTTY - inappropriate ioctl for device (e.g., USB-serial adapters)
+        throw new SerialPortError(
+          'Modem control signals not supported by this device',
+          SerialPortErrorCode.OPERATION_NOT_SUPPORTED,
+          error,
+        )
+      } else if (error instanceof Error && error.message.includes('errno 19')) {
+        // ENODEV - operation not supported by device
+        throw new SerialPortError(
+          'Modem control signals not supported by this device',
+          SerialPortErrorCode.OPERATION_NOT_SUPPORTED,
+          error,
+        )
+      }
+      throw error
+    }
   }
 
   /**
