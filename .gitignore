@@ -1,5 +1,21 @@
 node-serialport/
 node_modules/
 .DS_Store
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Claude AI files
 CLAUDE.md
 .claude/
