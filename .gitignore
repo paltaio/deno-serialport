@@ -19,3 +19,6 @@ pids
 # Claude AI files
 CLAUDE.md
 .claude/
+
+.tmp/
+*.log
