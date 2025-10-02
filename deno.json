@@ -8,8 +8,13 @@
   "tasks": {
     "dev": "deno run --watch main.ts",
     "format": "deno fmt",
-    "check": "deno check examples && deno check src && deno check mod.ts",
-    "lint": "deno lint"
+    "check": "deno check examples && deno check src && deno check mod.ts && deno check tests",
+    "lint": "deno lint",
+    "test": "DENO_NO_CHECK_LEAK=1 deno test -A",
+    "test:unit": "DENO_NO_CHECK_LEAK=1 deno test tests/unit/ --allow-ffi",
+    "test:integration": "DENO_NO_CHECK_LEAK=1 deno test tests/integration/ -A",
+    "test:linux": "DENO_NO_CHECK_LEAK=1 deno test tests/integration/serialport_linux_test.ts -A",
+    "test:macos": "DENO_NO_CHECK_LEAK=1 deno test tests/integration/serialport_macos_test.ts -A"
   },
   "fmt": {
     "lineWidth": 100,
@@ -38,6 +43,16 @@
     "@std/assert": "jsr:@std/assert@1",
     "@std/testing/bdd": "jsr:@std/testing@1/bdd"
   },
+  "test": {
+    "include": [
+      "tests/"
+    ],
+    "exclude": [
+      ".tmp/",
+      "examples/"
+    ]
+  },
+  "nodeModulesDir": "none",
   "publish": {
     "include": [
       "mod.ts",
