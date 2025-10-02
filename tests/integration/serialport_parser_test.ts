@@ -151,24 +151,30 @@ describe('SerialPort - Parser Integration Tests', {
                 baudRate: 115200,
             })
 
-            // Chain parsers: first split by newline, then by delimiter
+            // Chain TWO parsers: first split by delimiter '|', then split each segment by newline
+            const delimiterParser = new DelimiterParser({ delimiter: '|' })
             const lineParser = new ReadlineParser({ delimiter: '\n' })
-            const reader = port2.readable.pipeThrough(lineParser).getReader()
 
-            // Send data
-            await writeAll(port1, 'command:value1\ncommand:value2\n')
+            // Actually chain them together
+            const reader = port2.readable
+                .pipeThrough(delimiterParser)  // First parser: split by '|'
+                .pipeThrough(lineParser)       // Second parser: split by newline
+                .getReader()
 
-            // Read and parse lines
+            // Send data with both delimiters: segments separated by '|', lines separated by '\n'
+            await writeAll(port1, 'line1\nline2\n|line3\nline4\n|')
+
+            // Read parsed results (should get individual lines from both segments)
             const results: string[] = []
 
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < 4; i++) {
                 const { value } = await reader.read()
                 if (value) {
                     results.push(value)
                 }
             }
 
-            assertEquals(results, ['command:value1', 'command:value2'])
+            assertEquals(results, ['line1', 'line2', 'line3', 'line4'])
 
             reader.releaseLock()
             port1.close()

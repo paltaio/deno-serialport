@@ -6,6 +6,7 @@
 import { assertEquals } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
 import { SerialPort } from '../../src/core/serialport.ts'
+import { SerialPortError, SerialPortErrorCode } from '../../src/core/types.ts'
 import { createVirtualSerialPorts, writeAll } from '../helpers/socat.ts'
 import { isLinux } from '../../src/utils/platform.ts'
 
@@ -35,8 +36,10 @@ describeLinux('SerialPort - Linux-Specific Tests', {
                 assertEquals(typeof signals.ring, 'boolean')
             } catch (error) {
                 // Expected on virtual ports - PTY doesn't support TIOCMGET
-                if (error instanceof Error && error.message.includes('not supported')) {
-                    // Test passes - API works correctly even if device doesn't support it
+                if (error instanceof SerialPortError) {
+                    assertEquals(error.code, SerialPortErrorCode.OPERATION_NOT_SUPPORTED)
+                } else if (error instanceof Error && error.message.includes('not supported')) {
+                    // Legacy error handling - API works correctly even if device doesn't support it
                 } else {
                     throw error
                 }
@@ -64,8 +67,10 @@ describeLinux('SerialPort - Linux-Specific Tests', {
                 // Test passes if no exception thrown
             } catch (error) {
                 // Expected on virtual ports - PTY doesn't support TIOCMSET
-                if (error instanceof Error && error.message.includes('not supported')) {
-                    // Test passes - API works correctly even if device doesn't support it
+                if (error instanceof SerialPortError) {
+                    assertEquals(error.code, SerialPortErrorCode.OPERATION_NOT_SUPPORTED)
+                } else if (error instanceof Error && error.message.includes('not supported')) {
+                    // Legacy error handling - API works correctly even if device doesn't support it
                 } else {
                     throw error
                 }
