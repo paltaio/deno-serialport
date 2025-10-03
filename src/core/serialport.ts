@@ -46,6 +46,11 @@ export class SerialPort {
   private isOpen = false
   private originalTermios: ArrayBuffer | null = null
   private _readableStream: ReadableStream<Uint8Array> | null = null
+  private log(message: string, ...args: unknown[]): void {
+    if (this.options.debug) {
+      console.error(`[SerialPort ${this.options.path}]`, message, ...args)
+    }
+  }
 
   constructor(options: SerialPortOptions) {
     // Set defaults
@@ -63,6 +68,7 @@ export class SerialPort {
       hupcl: options.hupcl ?? true,
       highWaterMark: options.highWaterMark ?? DEFAULT_BUFFER_SIZE,
       lock: options.lock ?? true,
+      debug: options.debug ?? false,
     }
 
     // Validate options
@@ -159,8 +165,8 @@ export class SerialPort {
       if (this.fd !== null) {
         try {
           close(this.fd)
-        } catch {
-          // Ignore close error during cleanup
+        } catch (e) {
+          this.log(`Failed to close file descriptor ${this.fd} during cleanup:`, e)
         }
         this.fd = null
       }
@@ -331,8 +337,8 @@ export class SerialPort {
       if (this.originalTermios) {
         try {
           tcsetattr(this.fd, TCSA.TCSANOW, this.originalTermios)
-        } catch {
-          // Ignore error restoring termios
+        } catch (e) {
+          this.log(`Failed to restore original termios settings for ${this.options.path}:`, e)
         }
       }
 

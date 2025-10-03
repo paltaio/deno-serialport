@@ -43,6 +43,9 @@ export interface SerialPortOptions {
 
   /** Lock the port to prevent other processes from opening it */
   lock?: boolean
+
+  /** Enable debug logging */
+  debug?: boolean
 }
 
 /**
