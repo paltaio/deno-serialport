@@ -126,6 +126,27 @@ export class SerialPort {
       const flags = O_FLAGS.O_RDWR | O_FLAGS.O_NOCTTY | O_FLAGS.O_NONBLOCK
       this.fd = open(this.options.path, flags)
 
+      // Apply exclusive lock if requested
+      if (this.options.lock) {
+        try {
+          ioctl(this.fd, IOCTL.TIOCEXCL)
+        } catch (error) {
+          try {
+            if (this.fd !== null) {
+              close(this.fd)
+            }
+          } catch (_) {
+            // Ignore close error
+          }
+          this.fd = null
+          throw new SerialPortError(
+            `Failed to acquire exclusive lock on ${this.options.path}`,
+            SerialPortErrorCode.ACCESS_DENIED,
+            error as Error,
+          )
+        }
+      }
+
       // Save original termios settings
       this.originalTermios = createTermiosBuffer()
       tcgetattr(this.fd, this.originalTermios)
@@ -322,7 +343,15 @@ export class SerialPort {
         }
       }
 
-      close(this.fd)
+      try {
+        if (this.options.lock) {
+          try {
+            ioctl(this.fd, IOCTL.TIOCNXCL)
+          } catch {}
+        }
+      } finally {
+        close(this.fd)
+      }
     } finally {
       this.fd = null
       this.isOpen = false

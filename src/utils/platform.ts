@@ -118,6 +118,8 @@ export interface PlatformConfig {
     TIOCMSET: number
     TIOCMBIS: number
     TIOCMBIC: number
+    TIOCEXCL: number
+    TIOCNXCL: number
     TIOCMIWAIT: number
     TIOCGICOUNT: number
     FIONREAD: number
@@ -164,6 +166,8 @@ export function getPlatformConfig(): PlatformConfig {
           TIOCMSET: 0x8004746d,
           TIOCMBIS: 0x8004746b, // Set bits
           TIOCMBIC: 0x8004746c, // Clear bits
+          TIOCEXCL: 0x2000740d, // Exclusive access
+          TIOCNXCL: 0x2000740e, // Clear exclusive access
           TIOCMIWAIT: 0x545c, // May need verification
           TIOCGICOUNT: 0x545d, // May need verification
           FIONREAD: 0x4004667f, // May need verification
@@ -204,6 +208,8 @@ export function getPlatformConfig(): PlatformConfig {
           TIOCMSET: 0x5418,
           TIOCMBIS: 0x5416, // Set bits
           TIOCMBIC: 0x5417, // Clear bits
+          TIOCEXCL: 0x540c, // Exclusive access
+          TIOCNXCL: 0x540d, // Clear exclusive access
           TIOCMIWAIT: 0x545c,
           TIOCGICOUNT: 0x545d,
           FIONREAD: 0x541b,
