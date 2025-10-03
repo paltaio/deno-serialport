@@ -3,8 +3,6 @@
  */
 
 import {
-  cfsetispeed,
-  cfsetospeed,
   close,
   closeLibc,
   ioctl,
@@ -313,13 +311,6 @@ export class SerialPort {
     // Apply settings
     writeTermios(termios, termiosBuffer)
     tcsetattr(this.fd, TCSA.TCSANOW, termiosBuffer)
-
-    // On macOS, also set baud rate using cfsetispeed/cfsetospeed
-    if (isDarwin()) {
-      cfsetispeed(termiosBuffer, baudValue)
-      cfsetospeed(termiosBuffer, baudValue)
-      tcsetattr(this.fd, TCSA.TCSANOW, termiosBuffer)
-    }
 
     // Flush any pending I/O
     tcflush(this.fd, FLUSH.TCIOFLUSH)
