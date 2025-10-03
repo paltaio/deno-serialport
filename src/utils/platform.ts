@@ -8,13 +8,12 @@ export type Platform = 'darwin' | 'linux'
  * Get the current platform.
  */
 export function getPlatform(): Platform {
-  const os = Deno.build.os
-
-  if (os === 'darwin') {
+  if (isDarwin()) {
     return 'darwin'
-  } else if (os === 'linux') {
+  } else if (isLinux()) {
     return 'linux'
   } else {
+    const os = Deno.build.os
     throw new Error(`Unsupported platform: ${os}. Only Darwin (macOS) and Linux are supported.`)
   }
 }

@@ -371,7 +371,8 @@ export function cfsetispeed(termiosBuffer: ArrayBuffer, speed: number): void {
   const result = lib.symbols.cfsetispeed(buffer, speed)
 
   if (result === -1) {
-    throw new Error(`cfsetispeed failed`)
+    const errno = getErrno()
+    throw new Error(`cfsetispeed failed: errno ${errno}`)
   }
 }
 
@@ -384,7 +385,8 @@ export function cfsetospeed(termiosBuffer: ArrayBuffer, speed: number): void {
   const result = lib.symbols.cfsetospeed(buffer, speed)
 
   if (result === -1) {
-    throw new Error(`cfsetospeed failed`)
+    const errno = getErrno()
+    throw new Error(`cfsetospeed failed: errno ${errno}`)
   }
 }
 
