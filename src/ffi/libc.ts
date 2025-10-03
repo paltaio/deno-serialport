@@ -49,10 +49,7 @@ function buildSymbols() {
       parameters: ['i32'] as const,
       result: 'i32' as const,
     },
-    tcflow: {
-      parameters: ['i32', 'i32'] as const,
-      result: 'i32' as const,
-    },
+    // tcflow removed (unused)
     tcsendbreak: {
       parameters: ['i32', 'i32'] as const,
       result: 'i32' as const,
@@ -81,12 +78,8 @@ function buildSymbols() {
       parameters: ['i32', 'usize', 'buffer'] as const,
       result: 'i32' as const,
     },
-
     // File status
-    fcntl: {
-      parameters: ['i32', 'i32', 'i32'] as const,
-      result: 'i32' as const,
-    },
+    // fcntl removed (unused)
   }
 
   // Add platform-specific errno function
@@ -193,12 +186,11 @@ export function getErrno(): number {
 }
 
 function isTemporaryError(errno: number): boolean {
-  return (
-    errno === ERRNO.EAGAIN ||
-    errno === ERRNO.EWOULDBLOCK ||
-    errno === ERRNO.EAGAIN_MACOS ||
-    errno === ERRNO.EINTR
-  )
+  if (isDarwin()) {
+    return errno === ERRNO.EAGAIN_MACOS || errno === ERRNO.EINTR
+  }
+  // Linux and others treat EAGAIN/EWOULDBLOCK as 11
+  return errno === ERRNO.EAGAIN || errno === ERRNO.EWOULDBLOCK || errno === ERRNO.EINTR
 }
 
 /**
@@ -339,15 +331,7 @@ export function tcdrain(fd: number): void {
 /**
  * Control terminal I/O flow
  */
-export function tcflow(fd: number, action: number): void {
-  const lib = getLibc()
-  const result = lib.symbols.tcflow(fd, action)
-
-  if (result === -1) {
-    const errno = getErrno()
-    throw new Error(`tcflow failed: errno ${errno}`)
-  }
-}
+// tcflow wrapper removed (unused)
 
 /**
  * Send break signal

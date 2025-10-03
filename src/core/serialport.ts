@@ -3,6 +3,8 @@
  */
 
 import {
+  cfsetispeed,
+  cfsetospeed,
   close,
   closeLibc,
   ioctl,
@@ -204,13 +206,7 @@ export class SerialPort {
     // Set baud rate - platform specific
     const baudValue = getBaudRateValue(this.options.baudRate)
 
-    if (isDarwin()) {
-      // On macOS, baud rates are set via cfsetispeed/cfsetospeed
-      // and use actual values, not bit flags
-      termios.c_ispeed = baudValue
-      termios.c_ospeed = baudValue
-      // We'll set these after writing the termios structure back
-    } else {
+    if (!isDarwin()) {
       // On Linux, baud rates are bit flags in c_cflag
       // @ts-expect-error - CBAUD only exists on Linux
       termios.c_cflag &= ~CFLAG.CBAUD
@@ -318,6 +314,11 @@ export class SerialPort {
 
     // Apply settings
     writeTermios(termios, termiosBuffer)
+    // On macOS, ensure speeds are set via cfset* for portability
+    if (isDarwin()) {
+      cfsetispeed(termiosBuffer, baudValue)
+      cfsetospeed(termiosBuffer, baudValue)
+    }
     tcsetattr(this.fd, TCSA.TCSANOW, termiosBuffer)
 
     // Flush any pending I/O
