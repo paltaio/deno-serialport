@@ -490,20 +490,30 @@ export class SerialPort {
     try {
       const bits = new ArrayBuffer(4)
       const view = new DataView(bits)
-      let value = 0
 
+      // Read current modem control state
+      ioctl(this.fd, IOCTL.TIOCMGET, bits)
+      let value = view.getUint32(0, true)
+
+      // Update DTR if specified
       if (signals.dtr !== undefined) {
         if (signals.dtr) {
           value |= TIOCM.TIOCM_DTR
+        } else {
+          value &= ~TIOCM.TIOCM_DTR
         }
       }
 
+      // Update RTS if specified
       if (signals.rts !== undefined) {
         if (signals.rts) {
           value |= TIOCM.TIOCM_RTS
+        } else {
+          value &= ~TIOCM.TIOCM_RTS
         }
       }
 
+      // Write back modified state
       view.setUint32(0, value, true)
       ioctl(this.fd, IOCTL.TIOCMSET, bits)
     } catch (error) {
