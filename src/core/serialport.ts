@@ -8,6 +8,7 @@ import {
   ioctl,
   open,
   read,
+  tcdrain,
   tcflush,
   tcgetattr,
   tcsendbreak,
@@ -424,6 +425,14 @@ export class SerialPort {
     }
 
     tcflush(this.fd, queue)
+  }
+
+  drain(): void {
+    if (!this.isOpen || this.fd === null) {
+      throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
+    }
+
+    tcdrain(this.fd)
   }
 
   /**
