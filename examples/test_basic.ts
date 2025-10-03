@@ -67,7 +67,7 @@ try {
 
 // Test 4: Verify exported constants
 console.log('\n📚 Testing exported constants...')
-import { getBaudRateValue, CFLAG, IFLAG } from '../mod.ts'
+import { CFLAG, getBaudRateValue, IFLAG } from '../mod.ts'
 
 if (getBaudRateValue(9600)) {
   console.log('✅ Baud rate map accessible')

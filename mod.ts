@@ -35,10 +35,10 @@ export {
   type PortInfo,
   SerialPortError,
   SerialPortErrorCode,
+  type SerialPortEvent,
   type SerialPortOptions,
   type SerialPortSignals,
   type SetSignals,
-  type SerialPortEvent,
 } from './src/core/types.ts'
 
 // Utilities
