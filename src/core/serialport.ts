@@ -12,6 +12,7 @@ import {
   read,
   tcflush,
   tcgetattr,
+  tcsendbreak,
   tcsetattr,
   write,
 } from '../ffi/libc.ts'
@@ -413,21 +414,7 @@ export class SerialPort {
       throw new SerialPortError('Port not open', SerialPortErrorCode.PORT_CLOSED)
     }
 
-    // Set break
-    const bits = new ArrayBuffer(4)
-    const _view = new DataView(bits)
-    ioctl(this.fd, IOCTL.TIOCMBIS, bits)
-
-    // Wait for duration
-    if (duration > 0) {
-      const start = Date.now()
-      while (Date.now() - start < duration) {
-        // Busy wait for the specified duration
-      }
-    }
-
-    // Clear break
-    ioctl(this.fd, IOCTL.TIOCMBIC, bits)
+    tcsendbreak(this.fd, duration)
   }
 
   /**
