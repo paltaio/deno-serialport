@@ -8,7 +8,7 @@
  * Base parser class that all parsers extend
  * Provides common functionality for transforming serial port data
  */
-export type BaseParserOptions = Record<PropertyKey, never>
+export type BaseParserOptions = Record<string, unknown>
 
 export abstract class BaseParser<T = Uint8Array> extends TransformStream<Uint8Array, T> {
   protected buffer: Uint8Array = new Uint8Array(0)
