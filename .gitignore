@@ -1,8 +1,8 @@
-node-serialport/
 node_modules/
-.DS_Store
+.pnpm-store/
 
-# Logs
+# Temporary files
+.tmp/
 *.log
 
 # Runtime data
@@ -20,5 +20,16 @@ pids
 CLAUDE.md
 .claude/
 
-.tmp/
-*.log
+# Test artifacts
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
