@@ -97,15 +97,7 @@ export interface SetSignals {
 
   /** Request To Send */
   rts?: boolean
-
-  /** Break signal */
-  brk?: boolean
 }
-
-/**
- * Serial port event types
- */
-export type SerialPortEvent = 'open' | 'close' | 'error' | 'data' | 'drain'
 
 /**
  * Serial port error codes
