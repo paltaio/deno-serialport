@@ -3,6 +3,7 @@
  */
 
 import { BaseParser, type BaseParserOptions } from './base.ts'
+import { DEFAULT_MAX_BUFFER_SIZE } from '../core/constants.ts'
 
 /**
  * Options for the delimiter parser
@@ -53,7 +54,7 @@ export class DelimiterParser extends BaseParser<Uint8Array> {
     }
 
     this.includeDelimiter = options.includeDelimiter ?? false
-    this.maxBufferSize = options.maxBufferSize ?? 65536
+    this.maxBufferSize = options.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE
   }
 
   protected processChunk(

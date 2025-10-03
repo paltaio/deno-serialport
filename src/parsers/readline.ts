@@ -3,6 +3,7 @@
  */
 
 import { BaseParser, type BaseParserOptions } from './base.ts'
+import { DEFAULT_MAX_BUFFER_SIZE } from '../core/constants.ts'
 
 /**
  * Options for the readline parser
@@ -57,7 +58,7 @@ export class ReadlineParser extends BaseParser<string> {
     }
 
     this.includeDelimiter = options.includeDelimiter ?? false
-    this.maxBufferSize = options.maxBufferSize ?? 65536
+    this.maxBufferSize = options.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE
     this.decoder = new TextDecoder(options.encoding ?? 'utf-8')
   }
 

@@ -34,6 +34,7 @@ import {
   type SerialPortSignals,
   type SetSignals,
 } from './types.ts'
+import { DEFAULT_BUFFER_SIZE, POLL_INTERVAL_MS, WRITE_CHUNK_SIZE } from './constants.ts'
 
 /**
  * SerialPort class for communication with serial devices
@@ -60,7 +61,7 @@ export class SerialPort {
       xany: options.xany ?? false,
       autoOpen: options.autoOpen ?? true,
       hupcl: options.hupcl ?? true,
-      highWaterMark: options.highWaterMark ?? 65536,
+      highWaterMark: options.highWaterMark ?? DEFAULT_BUFFER_SIZE,
       lock: options.lock ?? true,
     }
 
@@ -135,7 +136,7 @@ export class SerialPort {
               close(this.fd)
             }
           } catch (_) {
-            // Ignore close error
+            // ignore
           }
           this.fd = null
           throw new SerialPortError(
@@ -339,7 +340,9 @@ export class SerialPort {
         if (this.options.lock) {
           try {
             ioctl(this.fd, IOCTL.TIOCNXCL)
-          } catch {}
+          } catch {
+            // ignore
+          }
         }
       } finally {
         close(this.fd)
@@ -366,12 +369,12 @@ export class SerialPort {
     let offset = 0
 
     while (offset < buffer.length) {
-      const chunk = buffer.slice(offset, offset + 4096)
+      const chunk = buffer.slice(offset, offset + WRITE_CHUNK_SIZE)
       const written = await write(this.fd, chunk)
 
       if (written === 0) {
         // Would block, wait a bit
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
         continue
       }
 
@@ -619,7 +622,7 @@ export class SerialPort {
           const bytesRead = await read(fd, readBuffer)
           if (bytesRead === 0) {
             // No data available, wait a bit before next read
-            await new Promise((resolve) => setTimeout(resolve, 10))
+            await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
           } else if (bytesRead > 0) {
             controller.enqueue(readBuffer.slice(0, bytesRead))
           }

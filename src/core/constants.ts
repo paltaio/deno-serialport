@@ -1,0 +1,4 @@
+export const WRITE_CHUNK_SIZE = 4096
+export const POLL_INTERVAL_MS = 10
+export const DEFAULT_BUFFER_SIZE = 65536
+export const DEFAULT_MAX_BUFFER_SIZE = 65536
