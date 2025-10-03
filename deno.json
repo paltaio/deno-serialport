@@ -10,11 +10,12 @@
     "format": "deno fmt",
     "check": "deno check examples && deno check src && deno check mod.ts && deno check tests",
     "lint": "deno lint",
-    "test": "DENO_NO_CHECK_LEAK=1 deno test -A",
-    "test:unit": "DENO_NO_CHECK_LEAK=1 deno test tests/unit/ --allow-ffi",
-    "test:integration": "DENO_NO_CHECK_LEAK=1 deno test tests/integration/ -A",
-    "test:linux": "DENO_NO_CHECK_LEAK=1 deno test tests/integration/serialport_linux_test.ts -A",
-    "test:macos": "DENO_NO_CHECK_LEAK=1 deno test tests/integration/serialport_macos_test.ts -A"
+    "test": "deno test -A",
+    "test:unit": "deno test tests/unit/ --allow-ffi",
+    "test:integration": "deno test tests/integration/ -A",
+    "test:linux": "deno test tests/integration/serialport_linux_test.ts -A",
+    "test:macos": "deno test tests/integration/serialport_macos_test.ts -A",
+    "publish": "deno publish"
   },
   "fmt": {
     "lineWidth": 100,
@@ -63,7 +64,8 @@
     "exclude": [
       "tests/**",
       "examples/**",
-      "*.test.ts"
+      "*.test.ts",
+      ".tmp/"
     ]
   }
 }
