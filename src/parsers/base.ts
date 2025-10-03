@@ -5,17 +5,11 @@
  */
 
 /**
- * Base parser options
- */
-export interface BaseParserOptions {
-  /** Optional high water mark for the transform stream */
-  highWaterMark?: number
-}
-
-/**
  * Base parser class that all parsers extend
  * Provides common functionality for transforming serial port data
  */
+export type BaseParserOptions = Record<PropertyKey, never>
+
 export abstract class BaseParser<T = Uint8Array> extends TransformStream<Uint8Array, T> {
   protected buffer: Uint8Array = new Uint8Array(0)
 
