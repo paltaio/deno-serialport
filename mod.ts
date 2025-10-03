@@ -38,6 +38,7 @@ export {
   type SerialPortOptions,
   type SerialPortSignals,
   type SetSignals,
+  type SerialPortEvent,
 } from './src/core/types.ts'
 
 // Utilities

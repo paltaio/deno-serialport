@@ -29,7 +29,10 @@ for (const port of ports) {
 }
 
 // Use the first available port or specify your own
-const portPath = ports[0].path
+const portPath = ports?.[0]?.path
+if (!portPath) {
+  throw new Error('No port found')
+}
 console.log(`\nUsing port: ${portPath}`)
 
 // Create and open a serial port
